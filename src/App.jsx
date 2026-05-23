@@ -6,28 +6,49 @@ import UserManagement from './Pages/UserManagement/UserManagement';
 import ActiveProjects from './Pages/ProjectManagement/ActiveProjects';
 import OngoingProjects from './Pages/ProjectManagement/OngoingProjects';
 import CompletedProjects from './Pages/ProjectManagement/CompletedProjects';
+import ExpiredProjects from './Pages/ProjectManagement/ExpiredProjects';
+import ProjectDetails from './Pages/ProjectManagement/ProjectDetails';
+import SettlementManagement from './Pages/ProjectManagement/SettlementManagement';
 import RecentTransactions from './Pages/RecentTransactions/RecentTransactions';
 import Enquiries from './Pages/Enquiries/Enquiries';
+import ExclusiveEnquiries from './Pages/Enquiries/ExclusiveEnquiries';
 import Chat from './Pages/Chat/Chat';
+import ProtectedRoute from './Components/Common/ProtectedRoute';
+import ScrollToTop from './Components/Common/ScrollToTop';
 
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route path="/login" element={<Login />} />
         
+        {/* Chat Route - Full Screen */}
+        <Route path="/dashboard/chat" element={
+          <ProtectedRoute>
+            <Chat />
+          </ProtectedRoute>
+        } />
+
         {/* Dashboard Routes */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<DashboardHome />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="projects" element={<Navigate to="active" replace />} />
           <Route path="projects/active" element={<ActiveProjects />} />
           <Route path="projects/ongoing" element={<OngoingProjects />} />
           <Route path="projects/completed" element={<CompletedProjects />} />
+          <Route path="projects/expired" element={<ExpiredProjects />} />
+          <Route path="projects/details/:id" element={<ProjectDetails />} />
+          <Route path="projects/settlement/:id" element={<SettlementManagement />} />
 
           <Route path="transactions" element={<RecentTransactions />} />
           <Route path="enquiries" element={<Enquiries />} />
-          <Route path="chat" element={<Chat />} />
+          <Route path="enquiries/exclusive" element={<ExclusiveEnquiries />} />
         </Route>
 
         {/* Redirect root to login for now */}

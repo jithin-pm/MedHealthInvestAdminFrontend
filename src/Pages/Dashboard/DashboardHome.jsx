@@ -1,12 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getDashboardStatsApi } from '../../services/allApi';
 
 const DashboardHome = () => {
+  const [adminName, setAdminName] = useState('Admin');
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    newUsersToday: 0,
+    enquiriesLast7Days: 0,
+    projectStats: {
+      active: { standard: 0, exclusive: 0 },
+      ongoing: { standard: 0, exclusive: 0 },
+      completed: { standard: 0, exclusive: 0 }
+    }
+  });
+
+  useEffect(() => {
+    const authData = localStorage.getItem('medhealthinvestadmin');
+    if (authData) {
+      const parsed = JSON.parse(authData);
+      if (parsed.user && parsed.user.fullName) {
+        setAdminName(parsed.user.fullName);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const result = await getDashboardStatsApi();
+      if (result.status === 200) {
+        setStats(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+    }
+  };
+
   return (
     <div className="space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Container */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Overview</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Welcome, {adminName}</h1>
           <p className="text-gray-400 text-sm md:text-base">
             Monitor incoming data, manage users, and view platform metrics.
           </p>
@@ -24,9 +59,9 @@ const DashboardHome = () => {
       {/* Grid for User & Enquiry Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { title: 'Total Users', value: '1,248', trend: '+12%', isPositive: true },
-          { title: 'New Users Today', value: '24', trend: '+18%', isPositive: true },
-          { title: 'Recent Enquiries', value: '89', trend: '-2%', isPositive: false },
+          { title: 'Total Users', value: stats.totalUsers.toLocaleString(), trend: '+12%', isPositive: true },
+          { title: 'New Users Today', value: stats.newUsersToday.toLocaleString(), trend: '+18%', isPositive: true },
+          { title: 'General Enquiries (7D)', value: stats.enquiriesLast7Days.toLocaleString(), trend: '-2%', isPositive: false },
         ].map((card, i) => (
            <div 
              key={i}
@@ -42,7 +77,7 @@ const DashboardHome = () => {
                </div>
              </div>
              <div className="mt-auto">
-               <span className="text-5xl lg:text-6xl font-extralight text-white tracking-tighter group-hover:text-[#ccff00] transition-colors duration-700">
+               <span className="text-5xl lg:text-6xl font-extralight text-white group-hover:text-[#ccff00] transition-colors duration-700">
                  {card.value}
                </span>
              </div>
@@ -65,11 +100,11 @@ const DashboardHome = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-end border-b border-white/[0.05] pb-4 group">
                 <span className="text-gray-500 font-light text-sm tracking-wide uppercase transition-colors group-hover:text-gray-400">Standard</span>
-                <span className="text-2xl font-light text-white">42</span>
+                <span className="text-2xl font-light text-white">{stats.projectStats.active.standard}</span>
               </div>
               <div className="flex justify-between items-end border-b border-white/[0.05] pb-4 group">
                 <span className="text-[#ccff00]/60 font-light text-sm tracking-wide uppercase transition-colors group-hover:text-[#ccff00]">Exclusive</span>
-                <span className="text-2xl font-light text-white">18</span>
+                <span className="text-2xl font-light text-white">{stats.projectStats.active.exclusive}</span>
               </div>
             </div>
           </div>
@@ -80,11 +115,11 @@ const DashboardHome = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-end border-b border-white/[0.05] pb-4 group">
                 <span className="text-gray-500 font-light text-sm tracking-wide uppercase transition-colors group-hover:text-gray-400">Standard</span>
-                <span className="text-2xl font-light text-white">15</span>
+                <span className="text-2xl font-light text-white">{stats.projectStats.ongoing.standard}</span>
               </div>
               <div className="flex justify-between items-end border-b border-white/[0.05] pb-4 group">
                 <span className="text-[#ccff00]/60 font-light text-sm tracking-wide uppercase transition-colors group-hover:text-[#ccff00]">Exclusive</span>
-                <span className="text-2xl font-light text-white">7</span>
+                <span className="text-2xl font-light text-white">{stats.projectStats.ongoing.exclusive}</span>
               </div>
             </div>
           </div>
@@ -95,11 +130,11 @@ const DashboardHome = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-end border-b border-white/[0.05] pb-4 group">
                 <span className="text-gray-500 font-light text-sm tracking-wide uppercase transition-colors group-hover:text-gray-400">Standard</span>
-                <span className="text-2xl font-light text-white">128</span>
+                <span className="text-2xl font-light text-white">{stats.projectStats.completed.standard}</span>
               </div>
               <div className="flex justify-between items-end border-b border-white/[0.05] pb-4 group">
                 <span className="text-[#ccff00]/60 font-light text-sm tracking-wide uppercase transition-colors group-hover:text-[#ccff00]">Exclusive</span>
-                <span className="text-2xl font-light text-white">65</span>
+                <span className="text-2xl font-light text-white">{stats.projectStats.completed.exclusive}</span>
               </div>
             </div>
           </div>

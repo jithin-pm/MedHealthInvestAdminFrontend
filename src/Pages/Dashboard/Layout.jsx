@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineHome, HiOutlineUsers, HiOutlineFolder, HiOutlineChatAlt2, HiOutlineLogout, HiOutlineMenuAlt2, HiX, HiOutlineChat, HiOutlineCurrencyDollar, HiOutlineChevronDown, HiOutlineStar } from 'react-icons/hi';
-import LogoWhite from '../../assets/MHI-LOGO-WHITE.png';
+import { LuCrown } from 'react-icons/lu';
+import Logo from '../../Components/Common/Logo';
 
 const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,9 +19,9 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
       <div className="space-y-1">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 font-medium text-[0.9rem] ${
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-300 font-bold text-[0.85rem] ${
             isActiveParent 
-               ? 'text-white'
+               ? 'text-[#ccff00] bg-[#ccff00]/5'
                : 'text-gray-400 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -31,22 +33,24 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
         </button>
         {isOpen && (
           <div className="pl-11 space-y-1 mt-1 animate-in slide-in-from-top-2 duration-300 fade-in">
-            {subLinks.map(sub => (
-              <NavLink
-                key={sub.to}
-                to={sub.to}
-                onClick={onClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-lg transition-all duration-300 text-[0.8rem] ${
-                    isActive
-                      ? 'text-[#ccff00] bg-white/5 font-semibold shadow-sm'
+            {subLinks.map(sub => {
+              const isSubActive = location.pathname.startsWith(sub.to);
+              return (
+                <NavLink
+                  key={sub.to}
+                  to={sub.to}
+                  onClick={onClick}
+                  className={`block px-3 py-1.5 rounded-lg transition-all duration-300 text-[0.8rem] relative ${
+                    isSubActive
+                      ? 'text-[#ccff00] bg-[#ccff00]/5 font-bold shadow-sm pl-4'
                       : 'text-gray-500 hover:text-white hover:bg-white/5'
-                  }`
-                }
-              >
-                {sub.label}
-              </NavLink>
-            ))}
+                  }`}
+                >
+                  {isSubActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#ccff00] rounded-full shadow-[0_0_10px_rgba(204,255,0,0.5)]" />}
+                  {sub.label}
+                </NavLink>
+              );
+            })}
           </div>
         )}
       </div>
@@ -57,17 +61,22 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
     <NavLink
       to={to}
       onClick={onClick}
-      end={to === '/dashboard'}
+      end={to === '/dashboard' || to === '/dashboard/enquiries'}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium text-[0.9rem] ${
+        `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 font-bold text-[0.85rem] relative ${
           isActive
-            ? 'bg-[#ccff00] text-black shadow-[0_0_15px_rgba(204,255,0,0.3)]'
+            ? 'text-[#ccff00] bg-[#ccff00]/5 shadow-sm pl-4'
             : 'text-gray-400 hover:text-white hover:bg-white/5'
         }`
       }
     >
-      <Icon className="text-xl" />
-      <span>{label}</span>
+      {({ isActive }) => (
+        <>
+          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#ccff00] rounded-full shadow-[0_0_10px_rgba(204,255,0,0.5)]" />}
+          <Icon className="text-xl" />
+          <span>{label}</span>
+        </>
+      )}
     </NavLink>
   );
 };
@@ -77,7 +86,27 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    navigate('/login');
+    Swal.fire({
+      title: 'Sign Out?',
+      text: 'Are you sure you want to end your administrative session?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ccff00',
+      cancelButtonColor: '#1a1a1a',
+      confirmButtonText: 'Yes, Sign Out',
+      cancelButtonText: 'Cancel',
+      background: '#0c0c0c',
+      color: '#ffffff',
+      customClass: {
+        confirmButton: 'text-black font-bold px-6 py-2.5 rounded-xl',
+        cancelButton: 'text-white font-bold px-6 py-2.5 rounded-xl'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem('medhealthinvestadmin');
+        navigate('/login');
+      }
+    });
   };
 
   const navLinks = [
@@ -91,10 +120,12 @@ const DashboardLayout = () => {
         { to: '/dashboard/projects/active', label: 'Active Projects' },
         { to: '/dashboard/projects/ongoing', label: 'Ongoing Projects' },
         { to: '/dashboard/projects/completed', label: 'Completed Projects' },
+        { to: '/dashboard/projects/expired', label: 'Expired Projects' },
       ]
     },
     { to: '/dashboard/transactions', label: 'Recent Transactions', icon: HiOutlineCurrencyDollar },
     { to: '/dashboard/enquiries', label: 'Enquiries', icon: HiOutlineChatAlt2 },
+    { to: '/dashboard/enquiries/exclusive', label: 'Exclusive Enquiries', icon: LuCrown },
     { to: '/dashboard/chat', label: 'Chat', icon: HiOutlineChat },
   ];
 
@@ -114,13 +145,7 @@ const DashboardLayout = () => {
       
       {/* Mobile Header / Navbar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-[70px] bg-[#0c0c0c]/80 backdrop-blur-md border-b border-white/5 z-40 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <img src={LogoWhite} alt="Logo" className="w-[32px]" />
-          <div className="flex flex-col leading-none">
-            <span className="text-[0.7rem] font-bold text-white tracking-widest">MED HEALTH</span>
-            <span className="text-[0.7rem] font-bold text-[#ccff00] tracking-widest mt-[1px]">INVEST</span>
-          </div>
-        </div>
+        <Logo size="mobile" />
         <button onClick={() => setIsSidebarOpen(true)} className="text-2xl text-gray-300 hover:text-white">
           <HiOutlineMenuAlt2 />
         </button>
@@ -142,13 +167,7 @@ const DashboardLayout = () => {
       >
         {/* Logo Area */}
         <div className="h-[90px] flex items-center justify-between px-6 border-b border-white/5 shrink-0">
-          <div className="flex items-center gap-3">
-            <img src={LogoWhite} alt="Med Health Invest" className="w-[38px]" />
-            <div className="flex flex-col leading-none">
-              <span className="text-[0.8rem] font-bold text-white tracking-[0.1em]">MED HEALTH</span>
-              <span className="text-[0.8rem] font-bold text-[#ccff00] tracking-[0.1em] mt-[2px]">INVEST</span>
-            </div>
-          </div>
+          <Logo size="sidebar" />
           <button className="lg:hidden text-gray-400 hover:text-white" onClick={() => setIsSidebarOpen(false)}>
             <HiX className="text-2xl" />
           </button>
@@ -172,7 +191,7 @@ const DashboardLayout = () => {
         <div className="p-4 border-t border-white/5 shrink-0">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-medium text-[0.9rem]"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-medium text-[0.85rem]"
           >
             <HiOutlineLogout className="text-xl" />
             <span>Sign Out</span>

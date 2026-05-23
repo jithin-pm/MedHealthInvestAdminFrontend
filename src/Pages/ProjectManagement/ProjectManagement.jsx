@@ -12,7 +12,7 @@ const ProjectManagement = () => {
     <div className="min-h-full">
       <PageHeader 
         title="Project Management" 
-        description="Manage active investments, portfolio, and documentation." 
+        description="Manage active investments, projects, and documentation." 
       />
       <div className="w-full rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-md p-6 h-[500px] flex items-center justify-center animate-in fade-in duration-700">
         <p className="text-gray-600 font-medium tracking-widest text-sm uppercase">Projects Grid Coming Soon</p>
