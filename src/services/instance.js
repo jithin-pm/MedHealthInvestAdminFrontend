@@ -71,6 +71,12 @@ instance.interceptors.response.use(
         const { config, response } = error;
         const originalRequest = config;
 
+        // Network/CORS errors — no response from server at all
+        // Don't attempt token refresh for these; just reject immediately
+        if (!response && error.request) {
+            return Promise.reject(error);
+        }
+
         // Soft failure checks or hard 401 check
         if (
             (response && response.status === 401) ||

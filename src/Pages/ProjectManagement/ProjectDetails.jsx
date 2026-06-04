@@ -22,6 +22,7 @@ import { BASE_URL } from '../../services/baseUrl';
 import { getProjectByIdApi, getProjectInvestorsApi, editProjectApi } from '../../services/allApi';
 import Swal from 'sweetalert2';
 import { generateProjectStatement } from '../../Utils/generateStatement';
+import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -118,8 +119,8 @@ const ProjectDetails = () => {
       console.error("Statement generation error:", err);
       Swal.fire({
         icon: 'error',
-        title: 'Download Failed',
-        text: 'An error occurred while generating the statement.'
+        title: getErrorTitle(err),
+        text: getErrorMessage(err, 'An error occurred while generating the statement.')
       });
     }
   };

@@ -23,6 +23,7 @@ import {
   getAllUsersApi 
 } from '../../services/allApi';
 import { showAlert } from '../../Utils/alert';
+import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 import { BASE_URL } from '../../services/baseUrl';
 
 const getImageUrl = (img) => {
@@ -76,7 +77,12 @@ const ActiveProjects = () => {
   const dropdownRef = React.useRef(null);
   const categoryDropdownRef = React.useRef(null);
   const userSearchRef = React.useRef(null);
+  const preSettledProofRef = React.useRef(null);
   const navigate = useNavigate();
+
+  // Investment Mode States
+  const [investmentMode, setInvestmentMode] = useState('Online Gateway');
+  const [preSettledProof, setPreSettledProof] = useState(null);
   const location = useLocation();
 
   // Handle incoming edit state from Details page
@@ -195,6 +201,11 @@ const ActiveProjects = () => {
       return;
     }
 
+    if (modalIsExclusive && investmentMode === 'Pre-Settled' && !preSettledProof && !isEditMode) {
+      showAlert('Required', 'Please upload the payment proof for Pre-Settled project.', 'info');
+      return;
+    }
+
     setIsSubmittingProject(true);
     try {
       const formData = new FormData();
@@ -209,6 +220,10 @@ const ActiveProjects = () => {
       
       if (modalIsExclusive && selectedUser) {
         formData.append('exclusiveUserId', selectedUser.id);
+        formData.append('investmentMode', investmentMode);
+        if (investmentMode === 'Pre-Settled' && preSettledProof) {
+          formData.append('preSettledProof', preSettledProof);
+        }
       }
       
       // Construct image slots to tell the backend which images to keep and which are new
@@ -238,8 +253,8 @@ const ActiveProjects = () => {
       }
     } catch (error) {
       console.error("Publish project error:", error);
-      const message = error.response?.data?.message || 'Failed to process project';
-      showAlert('Error', message, 'error');
+      const message = getErrorMessage(error, 'Failed to process project');
+      showAlert(getErrorTitle(error), message, 'error');
     } finally {
       setIsSubmittingProject(false);
     }
@@ -263,6 +278,8 @@ const ActiveProjects = () => {
     setExistingImages([]);
     setSelectedUser(null);
     setUserSearchQuery('');
+    setInvestmentMode('Online Gateway');
+    setPreSettledProof(null);
   };
 
   // Close dropdowns when clicking outside
@@ -300,9 +317,9 @@ const ActiveProjects = () => {
       }
     } catch (error) {
       console.error("Add category error:", error);
-      const message = error.response?.data?.message || 'Failed to add category';
+      const message = getErrorMessage(error, 'Failed to add category');
       const isDuplicate = message.toLowerCase().includes('already exists');
-      showAlert(isDuplicate ? 'Information' : 'Error', message, isDuplicate ? 'info' : 'error');
+      showAlert(isDuplicate ? 'Information' : getErrorTitle(error), message, isDuplicate ? 'info' : 'error');
     } finally {
       setIsSubmittingCategory(false);
     }
@@ -332,7 +349,7 @@ const ActiveProjects = () => {
         }
       } catch (error) {
         console.error("Delete project error:", error);
-        showAlert('Error', 'Failed to delete project', 'error');
+        showAlert(getErrorTitle(error), getErrorMessage(error, 'Failed to delete project'), 'error');
       }
     }
   };
@@ -788,6 +805,90 @@ const ActiveProjects = () => {
                     </div>
                   )}
                   <p className="text-[0.6rem] text-zinc-600 font-medium italic">* This project will be visible exclusively to the selected user in their dashboard.</p>
+                </div>
+              )}
+
+              {/* Investment Mode Selector for Exclusive Project */}
+              {modalIsExclusive && selectedUser && (
+                <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Investment Mode</label>
+                  <div className="flex gap-2 bg-white/[0.02] border border-white/10 rounded-xl p-1 w-full sm:w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setInvestmentMode('Online Gateway')}
+                      className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                        investmentMode === 'Online Gateway' 
+                          ? 'bg-white text-black shadow-lg scale-[1.02]' 
+                          : 'text-gray-400 hover:text-gray-300'
+                      }`}
+                    >
+                      Online Gateway
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInvestmentMode('Pre-Settled')}
+                      className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                        investmentMode === 'Pre-Settled' 
+                          ? 'bg-[#ccff00] text-black shadow-[0_0_15px_rgba(204,255,0,0.3)] scale-[1.02]' 
+                          : 'text-gray-400 hover:text-[#ccff00]'
+                      }`}
+                    >
+                      Pre-Settled
+                    </button>
+                  </div>
+
+                  {/* Pre-Settled Payment Proof Image Upload */}
+                  {investmentMode === 'Pre-Settled' && (
+                    <div className="mt-2 flex flex-col gap-2 p-5 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl transition-all">
+                      <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Upload Settlement Payment Proof</label>
+                      <div className="flex items-center gap-4 mt-2">
+                        {preSettledProof ? (
+                          <div className="relative w-24 h-24 rounded-xl border border-white/10 overflow-hidden shrink-0">
+                            <img 
+                              src={URL.createObjectURL(preSettledProof)} 
+                              alt="Proof Preview" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPreSettledProof(null)}
+                              className="absolute top-1 right-1 p-1 rounded-full bg-black/70 hover:bg-black text-gray-400 hover:text-white transition-all"
+                            >
+                              <HiX size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => preSettledProofRef.current?.click()}
+                            className="w-24 h-24 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-[#ccff00]/40 flex flex-col items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-[#ccff00] shrink-0"
+                          >
+                            <HiOutlineCloudUpload className="text-xl" />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Proof</span>
+                          </button>
+                        )}
+                        <input
+                          type="file"
+                          ref={preSettledProofRef}
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setPreSettledProof(e.target.files[0]);
+                            }
+                          }}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-gray-300">
+                            {preSettledProof ? preSettledProof.name : 'No proof file uploaded'}
+                          </span>
+                          <span className="text-[10px] text-gray-500 mt-1">
+                            Accepted formats: JPEG, PNG, WEBP (Max 5MB)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

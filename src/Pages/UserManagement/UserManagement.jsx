@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { HiOutlineSearch } from 'react-icons/hi';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
-import { FiX, FiShield, FiUser, FiInfo, FiCopy } from 'react-icons/fi';
+import { FiX, FiShield, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload } from 'react-icons/fi';
 import Swal from 'sweetalert2';
-import { getAllUsersApi, getUserVerificationStatusApi } from '../../services/allApi';
+import { getAllUsersApi, getUserVerificationStatusApi, getAllTransactionsApi } from '../../services/allApi';
+import { BASE_URL } from '../../services/baseUrl';
+import { generateInvestmentReceipt } from '../../Utils/generateReceipt';
 
 const PageHeader = ({ title, description }) => (
   <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -25,18 +27,34 @@ const UserManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
+  // Transaction modal state
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [transactionDetails, setTransactionDetails] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  const [allTransactions, setAllTransactions] = useState([]);
+
   useEffect(() => {
-    fetchUsers();
+    fetchUsersAndTransactions();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsersAndTransactions = async () => {
     try {
-      const response = await getAllUsersApi();
-      if (response.status === 200) {
-        setUsers(response.data);
+      setLoading(true);
+      const [usersResponse, txResponse] = await Promise.all([
+        getAllUsersApi(),
+        getAllTransactionsApi()
+      ]);
+
+      if (usersResponse.status === 200) {
+        setUsers(usersResponse.data);
+      }
+
+      if (txResponse.status === 200) {
+        setAllTransactions(txResponse.data.transactions || txResponse.data || []);
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -57,6 +75,21 @@ const UserManagement = () => {
     } finally {
       setLoadingDetails(false);
     }
+  };
+
+  const handleOpenTransactionModal = (user) => {
+    setSelectedUser(user);
+    setIsTransactionModalOpen(true);
+    setLoadingTransactions(true);
+    
+    // Filter transactions for this specific user
+    const userTxs = allTransactions.filter(tx => tx.userId === user.id);
+    setTransactionDetails(userTxs);
+    
+    // Simulate slight delay for smooth UI transition
+    setTimeout(() => {
+      setLoadingTransactions(false);
+    }, 300);
   };
 
   const handleCopyToClipboard = (text, label) => {
@@ -140,7 +173,7 @@ const UserManagement = () => {
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Contact</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Gender</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Date Joined</th>
-                <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Status</th>
+                <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Transactions</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Details</th>
               </tr>
             </thead>
@@ -178,9 +211,16 @@ const UserManagement = () => {
                     })}
                   </td>
                   <td className="py-5 px-6">
-                    <span className="px-2.5 py-1 rounded-full bg-green-500/10 text-green-500 text-[0.65rem] font-bold uppercase tracking-wider">
-                      Active
-                    </span>
+                    {allTransactions.filter(tx => tx.userId === user.id).length > 0 ? (
+                      <button
+                        onClick={() => handleOpenTransactionModal(user)}
+                        className="px-4 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white text-[0.65rem] font-black uppercase tracking-widest transition-all active:scale-[0.97]"
+                      >
+                        History
+                      </button>
+                    ) : (
+                      <span className="text-zinc-600 text-[0.65rem] font-bold uppercase tracking-wider">-</span>
+                    )}
                   </td>
                   <td className="py-5 px-6">
                     {((user.isPanVerified === 1 || user.isPanVerified === true) || (user.isBankVerified === 1 || user.isBankVerified === true)) ? (
@@ -419,6 +459,188 @@ const UserManagement = () => {
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="px-6 py-2.5 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-[#ccff00] transition-all active:scale-[0.98]"
+              >
+                Close View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction History Modal */}
+      {isTransactionModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="relative w-full max-w-4xl bg-[#0c0c0c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 font-['Outfit']">
+            {/* Header */}
+            <div className="p-6 md:p-8 border-b border-white/10 flex items-center justify-between bg-[#0a0a0a]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
+                  <FiInfo size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white tracking-tight">Transaction History</h3>
+                  <p className="text-gray-500 text-xs mt-0.5">{selectedUser.fullName} • {selectedUser.email}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsTransactionModalOpen(false)}
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all hover:bg-white/10 active:scale-95"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 md:p-8 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+              {loadingTransactions ? (
+                <div className="py-20 text-center text-gray-500 text-sm animate-pulse flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 rounded-full border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                  Loading transactions...
+                </div>
+              ) : transactionDetails && transactionDetails.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                    <table className="w-full min-w-[1000px] text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-[#0a0a0a]/50">
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Transaction ID</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Project Detail</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Project Type</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Payment Type</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Date</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Amount</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Status</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] text-center">Attachment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactionDetails.map((tx, index) => (
+                        <tr key={tx.id || index} className={`border-b border-white/5 transition-colors duration-200 ${
+                          tx.type !== 'INVESTMENT' ? 'bg-[#ccff00]/[0.02] hover:bg-[#ccff00]/[0.05]' : 'hover:bg-white/[0.02]'
+                        }`}>
+                          <td className="py-5 px-6">
+                            <span className="text-gray-500 text-[0.65rem] font-mono whitespace-nowrap">
+                              {tx.transactionId || tx.paymentId || '---'}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className="text-gray-300 font-medium text-sm">
+                              {tx.project?.projectName || tx.Project?.title || tx.projectName || 'Unknown Project'}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className={`text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase ${
+                              (tx.project?.projectType || tx.Project?.projectType) === 'Exclusive' 
+                                ? 'bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20' 
+                                : 'bg-white/5 text-gray-400 border border-white/10'
+                            }`}>
+                              {tx.project?.projectType || tx.Project?.projectType || 'Standard'}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className={`text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase ${
+                              tx.type === 'REFUND' 
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
+                                : tx.type === 'PAYOUT'
+                                  ? 'bg-[#00ffa3]/10 text-[#00ffa3] border border-[#00ffa3]/20'
+                                  : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                            }`}>
+                              {tx.type || 'INVESTMENT'}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className="text-gray-400 text-sm whitespace-nowrap">
+                              {tx.transactionDate ? new Date(tx.transactionDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(tx.createdAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className="text-white font-bold text-sm">₹{Number(tx.amount || tx.investmentAmount || 0).toLocaleString('en-IN')}</span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-1.5 h-1.5 rounded-full ${
+                                (tx.status === 'SUCCESS' || tx.status === 'Completed' || tx.paymentStatus === 'SUCCESS') ? 'bg-[#00ffa3]' : 
+                                (tx.status === 'PENDING' || tx.paymentStatus === 'PENDING') ? 'bg-orange-400' : 'bg-red-500'
+                              }`} />
+                              <span className="text-gray-300 text-sm font-medium">
+                                {(tx.status === 'SUCCESS' || tx.status === 'Completed' || tx.paymentStatus === 'SUCCESS') ? 'Completed' : tx.status || tx.paymentStatus}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex items-center justify-center gap-2">
+                               <button
+                                  onClick={() => {
+                                     if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
+                                        generateInvestmentReceipt({
+                                           amount: tx.amount,
+                                           paymentId: tx.transactionId || tx.paymentId,
+                                           projectTitle: tx.project?.projectName || tx.projectName || 'Investment Project',
+                                           duration: tx.project?.duration || 1,
+                                           isPayout: tx.type === 'PAYOUT',
+                                           isRefund: tx.type === 'REFUND',
+                                           paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
+                                        }, selectedUser, 'view');
+                                     } else {
+                                        generateInvestmentReceipt({
+                                           amount: tx.amount,
+                                           paymentId: tx.transactionId || tx.paymentId,
+                                           projectTitle: tx.project?.projectName || tx.projectName || 'Investment Project',
+                                           duration: tx.project?.duration || 1
+                                        }, selectedUser, 'view');
+                                     }
+                                  }}
+                                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#ccff00] hover:bg-[#ccff00] hover:text-black transition-all"
+                                  title="View Receipt"
+                               >
+                                  <FiPaperclip size={14} />
+                               </button>
+                               <button
+                                  onClick={() => {
+                                     if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
+                                        generateInvestmentReceipt({
+                                           amount: tx.amount,
+                                           paymentId: tx.transactionId || tx.paymentId,
+                                           projectTitle: tx.project?.projectName || tx.projectName || 'Investment Project',
+                                           duration: tx.project?.duration || 1,
+                                           isPayout: tx.type === 'PAYOUT',
+                                           isRefund: tx.type === 'REFUND',
+                                           paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
+                                        }, selectedUser, 'download');
+                                     } else {
+                                        generateInvestmentReceipt({
+                                           amount: tx.amount,
+                                           paymentId: tx.transactionId || tx.paymentId,
+                                           projectTitle: tx.project?.projectName || tx.projectName || 'Investment Project',
+                                           duration: tx.project?.duration || 1
+                                        }, selectedUser, 'download');
+                                     }
+                                  }}
+                                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 hover:text-white transition-all"
+                                  title="Download Receipt"
+                               >
+                                  <FiDownload size={14} />
+                               </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 text-center text-zinc-500 text-sm">
+                  No transactions found for this user.
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-white/10 flex justify-end bg-[#0a0a0a]">
+              <button
+                onClick={() => setIsTransactionModalOpen(false)}
+                className="px-6 py-2.5 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-[0.98]"
               >
                 Close View
               </button>

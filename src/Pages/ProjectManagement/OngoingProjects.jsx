@@ -23,6 +23,7 @@ import {
   getAllUsersApi 
 } from '../../services/allApi';
 import { showAlert } from '../../Utils/alert';
+import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 import { BASE_URL } from '../../services/baseUrl';
 
 const getImageUrl = (img) => {
@@ -196,7 +197,7 @@ const OngoingProjects = () => {
       }
     } catch (error) {
       console.error("Publish project error:", error);
-      showAlert('Error', 'Failed to process project', 'error');
+      showAlert(getErrorTitle(error), getErrorMessage(error, 'Failed to process project'), 'error');
     } finally {
       setIsSubmittingProject(false);
     }
@@ -295,7 +296,7 @@ const OngoingProjects = () => {
           fetchProjects();
         }
       } catch (error) {
-        showAlert('Error', 'Failed to delete project', 'error');
+        showAlert(getErrorTitle(error), getErrorMessage(error, 'Failed to delete project'), 'error');
       }
     }
   };

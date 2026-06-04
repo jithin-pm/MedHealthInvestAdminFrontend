@@ -59,9 +59,9 @@ const DashboardHome = () => {
       {/* Grid for User & Enquiry Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { title: 'Total Users', value: stats.totalUsers.toLocaleString(), trend: '+12%', isPositive: true },
-          { title: 'New Users Today', value: stats.newUsersToday.toLocaleString(), trend: '+18%', isPositive: true },
-          { title: 'General Enquiries (7D)', value: stats.enquiriesLast7Days.toLocaleString(), trend: '-2%', isPositive: false },
+          { title: 'Total Users', value: stats.totalUsers.toLocaleString() },
+          { title: 'New Users Today', value: stats.newUsersToday.toLocaleString() },
+          { title: 'General Enquiries (7D)', value: stats.enquiriesLast7Days.toLocaleString() },
         ].map((card, i) => (
            <div 
              key={i}
@@ -69,12 +69,6 @@ const DashboardHome = () => {
            >
              <div className="flex justify-between items-center mb-10">
                <h3 className="text-gray-500 text-[0.65rem] font-semibold tracking-[0.25em] uppercase">{card.title}</h3>
-               <div className="flex items-center gap-2">
-                 <div className={`w-1.5 h-1.5 rounded-full ${card.isPositive ? 'bg-[#ccff00]' : 'bg-red-500'}`} />
-                 <span className={`text-[0.65rem] font-bold tracking-widest ${card.isPositive ? 'text-gray-300' : 'text-gray-500'}`}>
-                   {card.trend}
-                 </span>
-               </div>
              </div>
              <div className="mt-auto">
                <span className="text-5xl lg:text-6xl font-extralight text-white group-hover:text-[#ccff00] transition-colors duration-700">

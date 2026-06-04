@@ -18,6 +18,7 @@ import {
 import { getProjectByIdApi, getProjectInvestorsApi, editProjectApi, getUserFinancialDetailsApi, recordPaybackApi } from '../../services/allApi';
 import { BASE_URL } from '../../services/baseUrl';
 import Swal from 'sweetalert2';
+import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 
 const SettlementManagement = () => {
   const { id } = useParams();
@@ -119,7 +120,7 @@ const SettlementManagement = () => {
       }
     } catch (error) {
       console.error("Error fetching financial details:", error);
-      Swal.fire('Warning', 'Could not fetch bank details.', 'info');
+      Swal.fire(getErrorTitle(error), getErrorMessage(error, 'Could not fetch bank details.'), 'warning');
     } finally {
       setIsFetchingDetails(false);
     }
@@ -146,7 +147,7 @@ const SettlementManagement = () => {
       }
     } catch (error) {
       console.error("Error recorded settlement:", error);
-      Swal.fire('Error', 'Failed to record settlement.', 'error');
+      Swal.fire(getErrorTitle(error), getErrorMessage(error, 'Failed to record settlement.'), 'error');
     } finally {
       setIsUploadingProof(false);
     }
@@ -185,7 +186,7 @@ const SettlementManagement = () => {
       }
     } catch (err) {
       console.error(err);
-      Swal.fire('Error', 'Failed to update project status.', 'error');
+      Swal.fire(getErrorTitle(err), getErrorMessage(err, 'Failed to update project status.'), 'error');
     }
   };
 

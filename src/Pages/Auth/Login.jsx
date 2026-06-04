@@ -5,6 +5,7 @@ import Logo from '../../Components/Common/Logo';
 import AuthFooter from '../../Components/Auth/AuthFooter';
 import { adminLoginApi } from '../../services/allApi';
 import { showAlert } from '../../Utils/alert';
+import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -43,8 +44,8 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
-      showAlert('Error', message, 'error');
+      const message = getErrorMessage(error, 'Login failed. Please try again.');
+      showAlert(getErrorTitle(error), message, 'error');
     } finally {
       setLoading(false);
     }

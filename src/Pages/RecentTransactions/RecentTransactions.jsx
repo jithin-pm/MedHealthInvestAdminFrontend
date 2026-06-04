@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { HiOutlineSearch, HiOutlineDownload, HiOutlineCurrencyRupee, HiOutlineCash, HiOutlineClock } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlineDownload, HiOutlineCurrencyRupee, HiOutlineCash, HiOutlineClock, HiOutlineChartBar, HiOutlineRefresh } from 'react-icons/hi';
 import { getAllTransactionsApi } from '../../services/allApi';
 import { TbRefresh } from 'react-icons/tb';
+import { FiPaperclip, FiDownload } from 'react-icons/fi';
+import { generateInvestmentReceipt } from '../../Utils/generateReceipt';
+import { generateTransactionReport } from '../../Utils/generateTransactionReport';
+import { BASE_URL } from '../../services/baseUrl';
 
 const PageHeader = ({ title, description }) => (
   <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -28,6 +32,7 @@ const RecentTransactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,14 +129,90 @@ const RecentTransactions = () => {
           />
         </div>
         
-        <button 
-          onClick={fetchTransactions}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white font-bold text-sm hover:bg-white/[0.08] transition-all group"
-        >
-          <TbRefresh className="text-lg group-hover:text-[#ccff00]" />
-          <span>Refresh Data</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowDownloadModal(true)}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#ccff00]/10 border border-[#ccff00]/30 text-[#ccff00] font-bold text-sm hover:bg-[#ccff00]/20 transition-all group"
+          >
+            <HiOutlineDownload className="text-lg group-hover:scale-110 transition-transform" />
+            <span>Download FY Report</span>
+          </button>
+
+          <button 
+            onClick={fetchTransactions}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white font-bold text-sm hover:bg-white/[0.08] transition-all group"
+          >
+            <TbRefresh className="text-lg group-hover:text-[#ccff00]" />
+            <span>Refresh Data</span>
+          </button>
+        </div>
       </div>
+
+      {/* Download Report Modal */}
+      {showDownloadModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setShowDownloadModal(false)}
+        >
+          <div 
+            className="bg-[#0c0c0c] border border-white/10 rounded-2xl w-full max-w-md mx-4 shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-6 border-b border-white/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-bold text-lg">Download Transaction Report</h3>
+                  <p className="text-gray-500 text-xs mt-1">Last Financial Year (April – March)</p>
+                </div>
+                <button
+                  onClick={() => setShowDownloadModal(false)}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <p className="text-gray-400 text-sm mb-5">Select the payment type to include in the report:</p>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'All Data', value: 'ALL', icon: HiOutlineChartBar, desc: 'All transaction types' },
+                  { label: 'Investment', value: 'INVESTMENT', icon: HiOutlineCurrencyRupee, desc: 'Investment records' },
+                  { label: 'Payout', value: 'PAYOUT', icon: HiOutlineCash, desc: 'Payout settlements' },
+                  { label: 'Refund', value: 'REFUND', icon: HiOutlineRefresh, desc: 'Refund records' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      generateTransactionReport(transactions, option.value);
+                      setShowDownloadModal(false);
+                    }}
+                    className="flex flex-col items-center gap-2 p-5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#ccff00]/40 hover:bg-[#ccff00]/5 transition-all group cursor-pointer"
+                  >
+                    <option.icon className="text-2xl text-[#ccff00] transition-colors" />
+                    <span className="text-white font-bold text-sm group-hover:text-[#ccff00] transition-colors">{option.label}</span>
+                    <span className="text-gray-500 text-[0.65rem]">{option.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 pb-6">
+              <button
+                onClick={() => setShowDownloadModal(false)}
+                className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table Container */}
       <div className="w-full rounded-[1.25rem] bg-[#0c0c0c] border border-white/10 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
@@ -157,6 +238,7 @@ const RecentTransactions = () => {
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Date</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Amount</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Status</th>
+                <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] text-center">Attachment</th>
               </tr>
             </thead>
             <tbody>
@@ -225,6 +307,66 @@ const RecentTransactions = () => {
                         <span className="text-gray-300 text-sm font-medium">
                           {tx.status === 'SUCCESS' ? 'Completed' : tx.status}
                         </span>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center justify-center gap-2">
+                         <button
+                            onClick={() => {
+                               const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
+                               if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
+                                  generateInvestmentReceipt({
+                                     amount: tx.amount,
+                                     paymentId: tx.transactionId,
+                                     projectTitle: tx.project?.projectName,
+                                     duration: tx.project?.duration || 1,
+                                     isPayout: tx.type === 'PAYOUT',
+                                     isRefund: tx.type === 'REFUND',
+                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
+                                  }, userData, 'view');
+                               } else {
+                                  generateInvestmentReceipt({
+                                     amount: tx.amount,
+                                     paymentId: tx.transactionId,
+                                     projectTitle: tx.project?.projectName,
+                                     duration: tx.project?.duration || 1,
+                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
+                                  }, userData, 'view');
+                               }
+                            }}
+                            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#ccff00] hover:bg-[#ccff00] hover:text-black transition-all"
+                            title="View Receipt"
+                         >
+                            <FiPaperclip size={14} />
+                         </button>
+                         <button
+                            onClick={() => {
+                               const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
+                               if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
+                                  generateInvestmentReceipt({
+                                     amount: tx.amount,
+                                     paymentId: tx.transactionId,
+                                     projectTitle: tx.project?.projectName,
+                                     duration: tx.project?.duration || 1,
+                                     isPayout: tx.type === 'PAYOUT',
+                                     isRefund: tx.type === 'REFUND',
+                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
+                                  }, userData, 'download');
+                               } else {
+                                  generateInvestmentReceipt({
+                                     amount: tx.amount,
+                                     paymentId: tx.transactionId,
+                                     projectTitle: tx.project?.projectName,
+                                     duration: tx.project?.duration || 1,
+                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
+                                  }, userData, 'download');
+                               }
+                            }}
+                            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 hover:text-white transition-all"
+                            title="Download Receipt"
+                         >
+                            <FiDownload size={14} />
+                         </button>
                       </div>
                     </td>
                   </tr>
