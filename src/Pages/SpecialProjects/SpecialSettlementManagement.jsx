@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   HiOutlineChevronLeft,
@@ -15,12 +15,13 @@ import {
   HiOutlineClock,
   HiX
 } from 'react-icons/hi';
-import { getProjectByIdApi, getProjectInvestorsApi, editProjectApi, getUserFinancialDetailsApi, recordPaybackApi } from '../../services/allApi';
+import { getSpecialProjectByIdApi, getSpecialInvestorsApi, editProjectApi, getUserFinancialDetailsApi, recordSpecialPaybackApi, getSpecialPayoutScheduleApi } from '../../services/allApi';
 import { BASE_URL } from '../../services/baseUrl';
 import Swal from 'sweetalert2';
+import { showAlert } from '../../Utils/alert';
 import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 
-const SettlementManagement = () => {
+const SpecialSettlementManagement = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -51,7 +52,7 @@ const SettlementManagement = () => {
     if (!id) return;
     setLoading(true);
     try {
-      const res = await getProjectByIdApi(id);
+      const res = await getSpecialProjectByIdApi(id);
       if (res.status === 200) {
         setProject(res.data);
       }
@@ -66,7 +67,7 @@ const SettlementManagement = () => {
     if (!id) return;
     setIsLoadingInvestors(true);
     try {
-      const res = await getProjectInvestorsApi(id);
+      const res = await getSpecialInvestorsApi(id);
       if (res.status === 200) {
         setInvestors(res.data.investments || []);
       }
@@ -87,12 +88,6 @@ const SettlementManagement = () => {
   
   React.useEffect(() => {
     if (allPaid && (project?.status === 'ONGOING' || project?.status === 'EXPIRED')) {
-      if (project?.projectType === 'Exclusive') {
-        // Auto finalize silently for Exclusive projects
-        handleFinalizeCompletion(true);
-        return;
-      }
-
       const timer = setTimeout(() => {
         Swal.fire({
           title: 'All Payouts Verified',
@@ -107,13 +102,13 @@ const SettlementManagement = () => {
           cancelButtonColor: '#1a1a1a'
         }).then((result) => {
           if (result.isConfirmed) {
-            handleFinalizeCompletion(false);
+            handleFinalizeCompletion();
           }
         });
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [allPaid, project?.status, project?.projectType]);
+  }, [allPaid, project?.status]);
 
   const handleInitiatePayBack = async (investment) => {
     setSelectedInvestment(investment);
@@ -132,32 +127,55 @@ const SettlementManagement = () => {
     }
   };
 
+  
+  const [capitalReturnAmount, setCapitalReturnAmount] = useState('');
+  const [payoutSchedule, setPayoutSchedule] = useState([]);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isSubmittingPayback, setIsSubmittingPayback] = useState(false);
+
+  const fetchSchedule = async (invId) => {
+    try {
+      const res = await getSpecialPayoutScheduleApi(invId);
+      if(res.status === 200) setPayoutSchedule(res.data.payouts);
+      setIsScheduleModalOpen(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handlePaybackSubmit = async (e) => {
     e.preventDefault();
     if (!paybackProof) {
-      Swal.fire('Required', 'Please upload payment proof.', 'warning');
+      showAlert('error', 'Required', 'Please upload a payment proof');
       return;
     }
-
-    setIsUploadingProof(true);
+    if (!capitalReturnAmount || parseFloat(capitalReturnAmount) <= 0) {
+      showAlert('error', 'Required', 'Please enter a valid capital return amount');
+      return;
+    }
+    
+    setIsSubmittingPayback(true);
     try {
       const formData = new FormData();
+      formData.append('capitalPaid', capitalReturnAmount);
       formData.append('paybackProof', paybackProof);
-
-      const res = await recordPaybackApi(selectedInvestment.id, formData);
-      if (res.status === 200) {
-        Swal.fire('Success', 'Settlement recorded successfully.', 'success');
+      
+      const response = await recordSpecialPaybackApi(selectedInvestment.id, formData);
+      if (response.status === 200) {
+        showAlert('success', 'Success', 'Monthly payback recorded successfully');
         setIsPaybackModalOpen(false);
         setPaybackProof(null);
+        setCapitalReturnAmount('');
         fetchInvestors();
       }
     } catch (error) {
-      console.error("Error recorded settlement:", error);
-      Swal.fire(getErrorTitle(error), getErrorMessage(error, 'Failed to record settlement.'), 'error');
+      console.error("Error recording payback:", error);
+      showAlert('error', 'Error', error.response?.data?.message || 'Failed to record payback');
     } finally {
-      setIsUploadingProof(false);
+      setIsSubmittingPayback(false);
     }
   };
+
 
   const handleOpenUserModal = async (investor) => {
     setSelectedUserForModal(investor);
@@ -176,31 +194,23 @@ const SettlementManagement = () => {
     }
   };
 
-  const handleFinalizeCompletion = async (silent = false) => {
+  const handleFinalizeCompletion = async () => {
     try {
       const res = await editProjectApi(id, { status: 'COMPLETED' });
       if (res.status === 200) {
-        if (!silent) {
-          await Swal.fire({
-            title: 'Settlement Finalized!',
-            text: 'Project has been officially closed and recorded.',
-            icon: 'success',
-            background: '#0c0c0c',
-            color: '#fff',
-            confirmButtonColor: '#ccff00'
-          });
-        }
-        if (project?.projectType === 'Exclusive') {
-          navigate('/dashboard/exclusive-projects');
-        } else {
-          navigate('/dashboard/projects/completed');
-        }
+        await Swal.fire({
+          title: 'Settlement Finalized!',
+          text: 'Project has been officially closed and recorded.',
+          icon: 'success',
+          background: '#0c0c0c',
+          color: '#fff',
+          confirmButtonColor: '#ccff00'
+        });
+        navigate('/dashboard/projects/completed');
       }
     } catch (err) {
       console.error(err);
-      if (!silent) {
-        Swal.fire(getErrorTitle(err), getErrorMessage(err, 'Failed to update project status.'), 'error');
-      }
+      Swal.fire(getErrorTitle(err), getErrorMessage(err, 'Failed to update project status.'), 'error');
     }
   };
 
@@ -266,9 +276,9 @@ const SettlementManagement = () => {
             </div>
           </div>
 
-          {(project?.status === 'ONGOING' || project?.status === 'EXPIRED') && allPaid && project?.projectType !== 'Exclusive' && (
+          {(project?.status === 'ONGOING' || project?.status === 'EXPIRED') && allPaid && (
             <button
-              onClick={() => handleFinalizeCompletion(false)}
+              onClick={handleFinalizeCompletion}
               className="px-8 py-4 rounded-xl bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] hover:bg-gray-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.05)] flex items-center gap-3 animate-in zoom-in duration-500"
             >
               <HiOutlineCheckCircle className="text-lg" />
@@ -746,4 +756,4 @@ const SettlementManagement = () => {
   );
 };
 
-export default SettlementManagement;
+export default SpecialSettlementManagement;

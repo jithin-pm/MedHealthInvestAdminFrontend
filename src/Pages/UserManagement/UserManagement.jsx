@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HiOutlineSearch } from 'react-icons/hi';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
-import { FiX, FiShield, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload } from 'react-icons/fi';
+import { FiX, FiShield, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload, FiFileText } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { getAllUsersApi, getUserVerificationStatusApi, getAllTransactionsApi } from '../../services/allApi';
 import { BASE_URL } from '../../services/baseUrl';
@@ -31,6 +31,10 @@ const UserManagement = () => {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  // Image Modal state
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const [allTransactions, setAllTransactions] = useState([]);
 
@@ -510,7 +514,7 @@ const UserManagement = () => {
                         <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Date</th>
                         <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Amount</th>
                         <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Status</th>
-                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] text-center">Attachment</th>
+                        <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] text-center">Receipts / Attachments</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -569,32 +573,21 @@ const UserManagement = () => {
                           </td>
                           <td className="py-5 px-6">
                             <div className="flex items-center justify-center gap-2">
-                               <button
-                                  onClick={() => {
-                                     if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
-                                        generateInvestmentReceipt({
-                                           amount: tx.amount,
-                                           paymentId: tx.transactionId || tx.paymentId,
-                                           projectTitle: tx.project?.projectName || tx.projectName || 'Investment Project',
-                                           duration: tx.project?.duration || 1,
-                                           isPayout: tx.type === 'PAYOUT',
-                                           isRefund: tx.type === 'REFUND',
-                                           paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
-                                        }, selectedUser, 'view');
-                                     } else {
-                                        generateInvestmentReceipt({
-                                           amount: tx.amount,
-                                           paymentId: tx.transactionId || tx.paymentId,
-                                           projectTitle: tx.project?.projectName || tx.projectName || 'Investment Project',
-                                           duration: tx.project?.duration || 1
-                                        }, selectedUser, 'view');
-                                     }
-                                  }}
-                                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#ccff00] hover:bg-[#ccff00] hover:text-black transition-all"
-                                  title="View Receipt"
-                               >
-                                  <FiPaperclip size={14} />
-                               </button>
+                               {/* View Attachment Button (Proof) */}
+                               {tx.paybackProof && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedImage(tx.paybackProof.startsWith('http') ? tx.paybackProof : `${BASE_URL}/${tx.paybackProof}`);
+                                      setIsImageModalOpen(true);
+                                    }}
+                                    className="w-8 h-8 rounded-lg bg-[#ccff00]/10 border border-[#ccff00]/20 flex items-center justify-center text-[#ccff00] hover:bg-[#ccff00] hover:text-black transition-all"
+                                    title="View Payment Attachment"
+                                  >
+                                    <FiPaperclip size={14} />
+                                  </button>
+                               )}
+                               
+                               {/* Download Receipt Button */}
                                <button
                                   onClick={() => {
                                      if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
@@ -617,7 +610,7 @@ const UserManagement = () => {
                                      }
                                   }}
                                   className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 hover:text-white transition-all"
-                                  title="Download Receipt"
+                                  title="Download System Receipt"
                                >
                                   <FiDownload size={14} />
                                </button>
@@ -644,6 +637,38 @@ const UserManagement = () => {
               >
                 Close View
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {isImageModalOpen && selectedImage && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <div className="w-full flex justify-end mb-4">
+              <button 
+                onClick={() => setIsImageModalOpen(false)}
+                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all backdrop-blur-md border border-white/10"
+              >
+                <FiX className="text-2xl" />
+              </button>
+            </div>
+            
+            <div className="relative w-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 p-2 shadow-2xl">
+              {selectedImage.toLowerCase().endsWith('.pdf') ? (
+                <iframe 
+                  src={selectedImage} 
+                  className="w-full h-[80vh] rounded-xl"
+                  title="Payment Proof PDF"
+                />
+              ) : (
+                <img 
+                  src={selectedImage} 
+                  alt="Payment Proof" 
+                  className="w-full max-h-[80vh] object-contain rounded-xl"
+                />
+              )}
             </div>
           </div>
         </div>

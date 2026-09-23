@@ -77,7 +77,7 @@ export const generateProjectStatement = (project, investors) => {
     doc.text('PROJECT STATUS', detailsX[2], 92);
 
     doc.setTextColor(0, 0, 0);
-    doc.text(`${project.roi}% p.a.`, detailsX[0], 99);
+    doc.text(`${project.roi}%`, detailsX[0], 99);
     doc.text(`${project.duration} Months`, detailsX[1], 99);
     doc.text(project.status, detailsX[2], 99);
 

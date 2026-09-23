@@ -11,7 +11,9 @@ import {
   HiOutlinePlay,
   HiOutlineRefresh,
   HiOutlineTrash,
-  HiOutlineInformationCircle
+  HiOutlineInformationCircle,
+  HiOutlineClock,
+  HiOutlineCheckCircle
 } from 'react-icons/hi';
 import { 
   addCategoryApi, 
@@ -32,7 +34,9 @@ const getImageUrl = (img) => {
   return `${BASE_URL}/${img.replace(/\\/g, '/')}`;
 };
 
-const ActiveProjects = () => {
+const ExclusiveProjects = () => {
+  const [statusFilter, setStatusFilter] = useState('ONGOING');
+  const [subTab, setSubTab] = useState('unsettled');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -199,17 +203,30 @@ const ActiveProjects = () => {
       return;
     }
 
+    if (investmentMode === 'Pre-Settled' && !preSettledProof && !isEditMode) {
+      showAlert('Required', 'Please upload the payment proof for Pre-Settled project.', 'info');
+      return;
+    }
+
     setIsSubmittingProject(true);
     try {
       const formData = new FormData();
       formData.append('projectName', projectName);
       formData.append('projectCategory', selectedCategory.name);
-      formData.append('projectType', 'Standard');
+      formData.append('projectType', 'Exclusive');
       formData.append('targetAmount', targetAmount);
       formData.append('roi', roi);
       formData.append('duration', duration);
       formData.append('collectedAmount', projectData.collectedAmount || 0);
       formData.append('minInvestmentAmount', projectData.minInvestmentAmount || 1000);
+      
+      if (selectedUser) {
+        formData.append('exclusiveUserId', selectedUser.id);
+        formData.append('investmentMode', investmentMode);
+        if (investmentMode === 'Pre-Settled' && preSettledProof) {
+          formData.append('preSettledProof', preSettledProof);
+        }
+      }
       
       // Construct image slots to tell the backend which images to keep and which are new
       const imageSlots = [0, 1, 2, 3].map(idx => {
@@ -309,18 +326,34 @@ const ActiveProjects = () => {
     }
   };
 
-  const status = 'Active';
-  const title = `${status} Projects`;
-  const description = `View and manage all active investment projects here.`;
+  const title = `Exclusive Projects`;
+  const description = `View and manage all exclusive investment projects here.`;
 
   // Filter projects based on type and active status
-  const filteredProjects = allProjects.filter(p => 
-    p.projectType === 'Standard' &&
-    p.status === 'ACTIVE'
-  );
+  const filteredProjects = allProjects.filter(p => {
+    if (p.projectType !== 'Exclusive') return false;
+    
+    if (statusFilter === 'ONGOING') {
+      return p.status === 'ONGOING' && (!p.completionDate || new Date(p.completionDate) > new Date());
+    }
+    
+    if (statusFilter === 'COMPLETED') {
+      if (subTab === 'settled') {
+        return p.status === 'COMPLETED';
+      } else {
+        return p.status === 'ONGOING' && p.completionDate && new Date(p.completionDate) <= new Date();
+      }
+    }
+    
+    return p.status === statusFilter;
+  });
 
   const handleViewDetails = (project) => {
     navigate(`/dashboard/projects/details/${project.id}`, { state: { project } });
+  };
+
+  const handleSettlePayouts = (project) => {
+    navigate(`/dashboard/projects/settlement/${project.id}`);
   };
 
   const handleDeleteProject = async (projectId) => {
@@ -428,9 +461,54 @@ const ActiveProjects = () => {
             )}
           </div>
 
-          {/* Toggle Switch removed */}
+          {/* Status Filter Tabs */}
+          <div className="flex overflow-x-auto custom-scrollbar bg-[#111] border border-white/10 rounded-xl p-1 w-full sm:w-auto shrink-0">
+            {['ONGOING', 'COMPLETED'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center whitespace-nowrap ${
+                  statusFilter === status 
+                    ? 'bg-[#ccff00] text-black shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {statusFilter === 'COMPLETED' && (
+        <div className="flex items-center gap-2 border-b border-white/5 pb-1 mb-6 animate-in fade-in duration-500">
+           {[
+             { id: 'unsettled', label: 'Pending Settlement', icon: HiOutlineClock, count: allProjects.filter(p => p.projectType === 'Exclusive' && p.status === 'ONGOING' && p.completionDate && new Date(p.completionDate) <= new Date()).length },
+             { id: 'settled', label: 'Fully Settled', icon: HiOutlineCheckCircle, count: allProjects.filter(p => p.projectType === 'Exclusive' && p.status === 'COMPLETED').length }
+           ].map(tab => (
+             <button
+               key={tab.id}
+               onClick={() => setSubTab(tab.id)}
+               className={`relative px-6 py-4 flex items-center gap-3 transition-all duration-300 group ${
+                 subTab === tab.id ? 'text-[#ccff00]' : 'text-gray-500 hover:text-white'
+               }`}
+             >
+               <tab.icon className={`text-lg ${subTab === tab.id ? 'animate-pulse' : ''}`} />
+               <span className="text-[10px] font-black uppercase tracking-[0.2em]">{tab.label}</span>
+               {tab.count > 0 && (
+                 <span className={`px-2 py-0.5 rounded-full text-[8px] font-black ${
+                   subTab === tab.id ? 'bg-[#ccff00] text-black' : 'bg-white/5 text-gray-500 group-hover:bg-white/10'
+                 }`}>
+                   {tab.count}
+                 </span>
+               )}
+               {subTab === tab.id && (
+                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#ccff00] shadow-[0_0_15px_rgba(204,255,0,0.5)]" />
+               )}
+             </button>
+           ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-700">
         {isLoading ? (
@@ -454,8 +532,31 @@ const ActiveProjects = () => {
                     }
                   })() : 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=800&auto=format&fit=crop'} 
                   alt={project.projectName} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ${
+                    statusFilter === 'COMPLETED' && subTab === 'unsettled' ? 'grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100' : ''
+                  }`}
                 />
+                
+                {/* Status Badge */}
+                <div className="absolute top-6 left-6 flex items-center gap-2">
+                  <div className={`px-3 py-1.5 rounded-lg backdrop-blur-md border flex items-center gap-2 ${
+                    statusFilter === 'ONGOING' 
+                      ? 'bg-black/60 border-[#ccff00]/20 text-[#ccff00]' 
+                      : statusFilter === 'COMPLETED' && subTab === 'settled'
+                        ? 'bg-black/60 border-[#ccff00]/20 text-[#ccff00]'
+                        : 'bg-black/60 border-orange-500/20 text-orange-500'
+                  }`}>
+                    {statusFilter === 'ONGOING' || (statusFilter === 'COMPLETED' && subTab === 'settled') 
+                      ? <HiOutlineCheckCircle className="text-sm" /> 
+                      : <HiOutlineClock className="text-sm animate-pulse" />
+                    }
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">
+                      {statusFilter === 'ONGOING' 
+                        ? 'Ongoing' 
+                        : subTab === 'settled' ? 'Settled' : 'Unsettled'}
+                    </span>
+                  </div>
+                </div>
                 <div className="absolute inset-0 bg-black/20" />
                 <div className="absolute top-4 left-4 bg-[#ccff00] text-black text-[0.6rem] font-black px-2.5 py-1 uppercase rounded tracking-[0.15em] shadow-lg">
                   {project.status}
@@ -527,28 +628,42 @@ const ActiveProjects = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-auto flex gap-3">
-                  <button 
-                    onClick={() => handleViewDetails(project)}
-                    className="flex-1 py-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] transition-all duration-300 flex items-center justify-center gap-2.5 group/btn"
-                  >
-                    <HiOutlineEye className="text-gray-400 group-hover/btn:text-[#ccff00] transition-colors text-lg" />
-                    <span className="text-[0.7rem] font-bold text-white uppercase tracking-[0.2em]">View</span>
-                  </button>
-                  <button 
-                    onClick={() => handleEditClick(project)}
-                    className="px-4 py-3.5 rounded-xl bg-[#ccff00]/5 hover:bg-[#ccff00]/10 border border-[#ccff00]/10 transition-all duration-300 flex items-center justify-center group/edit"
-                    title="Edit Project"
-                  >
-                    <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg" className="text-[#ccff00]"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteProject(project.id)}
-                    className="px-4 py-3.5 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 transition-all duration-300 flex items-center justify-center group/delete"
-                    title="Delete Project"
-                  >
-                    <HiOutlineTrash className="text-red-500 text-lg group-hover:scale-110 transition-transform" />
-                  </button>
+                <div className="mt-auto flex flex-col gap-2">
+                  {statusFilter === 'COMPLETED' && subTab === 'unsettled' ? (
+                    <button 
+                      onClick={() => handleSettlePayouts(project)}
+                      className="w-full py-4 rounded-2xl bg-[#ccff00] hover:bg-[#b8e600] text-black transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(204,255,0,0.1)] active:scale-[0.98]"
+                    >
+                       <span className="text-[10px] font-black uppercase tracking-[0.2em]">Initiate Settlement</span>
+                       <HiOutlineFolder className="text-lg" />
+                    </button>
+                  ) : (
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => handleViewDetails(project)}
+                        className="flex-1 py-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] transition-all duration-300 flex items-center justify-center gap-2.5 group/btn"
+                      >
+                        <HiOutlineEye className="text-gray-400 group-hover/btn:text-[#ccff00] transition-colors text-lg" />
+                        <span className="text-[0.7rem] font-bold text-white uppercase tracking-[0.2em]">
+                          {statusFilter === 'COMPLETED' ? 'History' : 'View'}
+                        </span>
+                      </button>
+                      <button 
+                        onClick={() => handleEditClick(project)}
+                        className="px-4 py-3.5 rounded-xl bg-[#ccff00]/5 hover:bg-[#ccff00]/10 border border-[#ccff00]/10 transition-all duration-300 flex items-center justify-center group/edit"
+                        title="Edit Project"
+                      >
+                        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg" className="text-[#ccff00]"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteProject(project.id)}
+                        className="px-4 py-3.5 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 transition-all duration-300 flex items-center justify-center group/delete"
+                        title="Delete Project"
+                      >
+                        <HiOutlineTrash className="text-red-500 text-lg group-hover:scale-110 transition-transform" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -557,7 +672,7 @@ const ActiveProjects = () => {
         ) : (
           <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
             <HiOutlineFolder className="text-4xl text-gray-700" />
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No Active Projects Found</p>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No {statusFilter} Projects Found</p>
           </div>
         )}
       </div>
@@ -652,6 +767,141 @@ const ActiveProjects = () => {
                 )}
               </div>
 
+              {/* User Selection for Exclusive Project */}
+              <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300" ref={userSearchRef}>
+                <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Target User Association</label>
+                
+                {selectedUser ? (
+                  <div className="flex items-center justify-between p-4 bg-[#ccff00]/5 border border-[#ccff00]/20 rounded-xl group/selected transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black font-black text-xs uppercase">
+                        {(selectedUser.fullName[0] || 'U')}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white">{selectedUser.fullName}</span>
+                        <span className="text-[0.7rem] font-medium text-gray-500">{selectedUser.email}</span>
+                      </div>
+                    </div>
+                    {!isEditMode && (
+                      <button 
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setUserSearchQuery('');
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                        title="Change User"
+                      >
+                        <HiX className="text-lg" />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        onFocus={() => setIsUserSearchOpen(true)}
+                        placeholder="Search by Name, Email or Phone..." 
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] transition-all placeholder:text-gray-600"
+                      />
+                    </div>
+
+                    {isUserSearchOpen && userSearchQuery.trim() && (
+                      <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#0c0c0c] border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-1.5">
+                          {filteredUsers.length > 0 ? (
+                            filteredUsers.map((user) => (
+                              <button
+                                key={user.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsUserSearchOpen(false);
+                                  setUserSearchQuery(user.email);
+                                }}
+                                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all group/item text-left mb-1 last:mb-0"
+                              >
+                                <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 font-bold text-xs uppercase group-hover/item:bg-[#ccff00] group-hover/item:text-black transition-all">
+                                  {(user.fullName[0] || 'U')}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[13px] font-bold text-white group-hover/item:text-[#ccff00] transition-colors">{user.fullName}</span>
+                                  <span className="text-[10px] font-medium text-gray-500">{user.email}</span>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center">
+                              <p className="text-[0.65rem] font-bold text-gray-600 uppercase tracking-widest">No User Found</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-[0.6rem] text-zinc-600 font-medium italic">* This project will be visible exclusively to the selected user in their dashboard.</p>
+              </div>
+
+              {/* Investment Mode Selector for Exclusive Project */}
+              {selectedUser && (
+                <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {/* Pre-Settled Payment Proof Image Upload */}
+                  {investmentMode === 'Pre-Settled' && (
+                    <div className="mt-2 flex flex-col gap-2 p-5 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl transition-all">
+                      <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Upload Settlement Payment Proof</label>
+                      <div className="flex items-center gap-4 mt-2">
+                        {preSettledProof ? (
+                          <div className="relative w-24 h-24 rounded-xl border border-white/10 overflow-hidden shrink-0">
+                            <img 
+                              src={URL.createObjectURL(preSettledProof)} 
+                              alt="Proof Preview" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPreSettledProof(null)}
+                              className="absolute top-1 right-1 p-1 rounded-full bg-black/70 hover:bg-black text-gray-400 hover:text-white transition-all"
+                            >
+                              <HiX size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => preSettledProofRef.current?.click()}
+                            className="w-24 h-24 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-[#ccff00]/40 flex flex-col items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-[#ccff00] shrink-0"
+                          >
+                            <HiOutlineCloudUpload className="text-xl" />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Proof</span>
+                          </button>
+                        )}
+                        <input
+                          type="file"
+                          ref={preSettledProofRef}
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setPreSettledProof(e.target.files[0]);
+                            }
+                          }}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-gray-300">
+                            {preSettledProof ? preSettledProof.name : 'No proof file uploaded'}
+                          </span>
+                          <span className="text-[10px] text-gray-500 mt-1">
+                            Accepted formats: JPEG, PNG, WEBP (Max 5MB)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Financials & Timeline Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -668,27 +918,6 @@ const ActiveProjects = () => {
                     placeholder="e.g. 500000" 
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all placeholder:text-gray-600"
                   />
-                </div>
-
-                {/* Min Investment Amount */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Min Investment (₹)</label>
-                  <input 
-                    type="number" 
-                    name="minInvestmentAmount"
-                    min="0"
-                    value={projectData.minInvestmentAmount}
-                    onChange={(e) => {
-                       const val = e.target.value;
-                       if (parseFloat(val) < 0) return;
-                       setProjectData(prev => ({ ...prev, minInvestmentAmount: val }));
-                    }}
-                    placeholder="e.g. 1000" 
-                    className={`w-full bg-white/[0.03] border ${parseFloat(projectData.minInvestmentAmount) > parseFloat(projectData.targetAmount) ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] transition-all placeholder:text-gray-600`}
-                  />
-                  {parseFloat(projectData.minInvestmentAmount) > parseFloat(projectData.targetAmount) && (
-                    <span className="text-[10px] text-red-500 font-bold uppercase">Cannot exceed target</span>
-                  )}
                 </div>
 
                 {/* Est. ROI */}
@@ -792,7 +1021,17 @@ const ActiveProjects = () => {
               </button>
               <button 
                 onClick={handlePublishProject}
-                disabled={isSubmittingProject || !projectData.projectName || !selectedCategory || !projectData.targetAmount || !projectData.roi || !projectData.duration}
+                disabled={
+                  isSubmittingProject || 
+                  !projectData.projectName || 
+                  !selectedCategory || 
+                  !projectData.targetAmount || 
+                  !projectData.roi || 
+                  !projectData.duration || 
+                  !selectedUser ||
+                  (!isEditMode && !preSettledProof) ||
+                  (!isEditMode && !projectImages[0])
+                }
                 className="px-6 py-3 rounded-xl bg-[#ccff00] hover:bg-[#b3ff00] text-black font-black text-sm tracking-[0.15em] uppercase shadow-[0_0_15px_rgba(204,255,0,0.2)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {isSubmittingProject ? 'Processing...' : (isEditMode ? 'Update Project' : 'Publish Initiative')}
@@ -943,4 +1182,4 @@ const ActiveProjects = () => {
   );
 };
 
-export default ActiveProjects;
+export default ExclusiveProjects;

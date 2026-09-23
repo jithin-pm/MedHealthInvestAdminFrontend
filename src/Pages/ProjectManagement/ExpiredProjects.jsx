@@ -31,7 +31,6 @@ const getImageUrl = (img) => {
 };
 
 const ExpiredProjects = () => {
-  const [isExclusive, setIsExclusive] = useState(false);
   const [allProjects, setAllProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -66,7 +65,7 @@ const ExpiredProjects = () => {
   const description = `Projects that failed to reach their target within the 90-day active window. Manage refunds here.`;
 
   const filteredProjects = allProjects.filter(p => 
-    (isExclusive ? p.projectType === 'Exclusive' : p.projectType === 'Standard') &&
+    p.projectType === 'Standard' &&
     p.status === 'EXPIRED'
   );
 
@@ -80,29 +79,6 @@ const ExpiredProjects = () => {
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{title}</h1>
           <p className="text-gray-400 text-sm md:text-base">{description}</p>
-        </div>
-        
-        <div className="flex bg-[#111] border border-white/10 rounded-xl p-1 w-full sm:w-auto shrink-0">
-          <button
-            onClick={() => setIsExclusive(false)}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-              !isExclusive 
-                ? 'bg-white/10 text-white shadow-sm' 
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            Standard
-          </button>
-          <button
-            onClick={() => setIsExclusive(true)}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-              isExclusive 
-                ? 'bg-[#ccff00] text-black shadow-sm' 
-                : 'text-gray-500 hover:text-[#ccff00]'
-            }`}
-          >
-            Exclusive
-          </button>
         </div>
       </div>
 
@@ -194,7 +170,7 @@ const ExpiredProjects = () => {
         ) : (
           <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
             <HiOutlineFolder className="text-4xl text-gray-700" />
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No {isExclusive ? 'Exclusive ' : ''}Expired Projects Found</p>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No Expired Projects Found</p>
           </div>
         )}
       </div>

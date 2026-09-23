@@ -33,13 +33,12 @@ const getImageUrl = (img) => {
 };
 
 const OngoingProjects = () => {
-  const [isExclusive, setIsExclusive] = useState(false);
+  const [filterProjectType, setFilterProjectType] = useState('Standard');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [modalIsExclusive, setModalIsExclusive] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
@@ -163,14 +162,10 @@ const OngoingProjects = () => {
       const formData = new FormData();
       formData.append('projectName', projectName);
       formData.append('projectCategory', selectedCategory.name);
-      formData.append('projectType', modalIsExclusive ? 'Exclusive' : 'Standard');
+      formData.append('projectType', 'Standard');
       formData.append('targetAmount', targetAmount);
       formData.append('roi', roi);
       formData.append('duration', duration);
-      
-      if (modalIsExclusive && selectedUser) {
-        formData.append('exclusiveUserId', selectedUser.id);
-      }
       
       const imageSlots = [0, 1, 2, 3].map(idx => {
         if (projectImages[idx]) return 'NEW';
@@ -213,7 +208,6 @@ const OngoingProjects = () => {
     setProjectImages([null, null, null, null]);
     setProjectVideo(null);
     setSelectedCategory(null);
-    setModalIsExclusive(false);
     setIsEditMode(false);
     setEditProjectId(null);
     setExistingImages([]);
@@ -240,10 +234,10 @@ const OngoingProjects = () => {
 
   const status = 'Ongoing';
   const title = `${status} Projects`;
-  const description = `View and manage all ${isExclusive ? 'exclusive ' : ''}ongoing investment projects here.`;
+  const description = `View and manage all ongoing investment projects here.`;
 
   const filteredProjects = allProjects.filter(p => 
-    (isExclusive ? p.projectType === 'Exclusive' : p.projectType === 'Standard') &&
+    p.projectType === 'Standard' &&
     p.status === 'ONGOING'
   );
 
@@ -260,7 +254,6 @@ const OngoingProjects = () => {
       roi: project.roi,
       duration: project.duration,
     });
-    setModalIsExclusive(project.projectType === 'Exclusive');
     const cat = categories.find(c => c.name === project.projectCategory);
     setSelectedCategory(cat || { name: project.projectCategory });
     
@@ -307,29 +300,6 @@ const OngoingProjects = () => {
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{title}</h1>
           <p className="text-gray-400 text-sm md:text-base">{description}</p>
-        </div>
-        
-        <div className="flex bg-[#111] border border-white/10 rounded-xl p-1 w-full sm:w-auto shrink-0">
-          <button
-            onClick={() => setIsExclusive(false)}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-              !isExclusive 
-                ? 'bg-white/10 text-white shadow-sm' 
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            Standard
-          </button>
-          <button
-            onClick={() => setIsExclusive(true)}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-              isExclusive 
-                ? 'bg-[#ccff00] text-black shadow-sm' 
-                : 'text-gray-500 hover:text-[#ccff00]'
-            }`}
-          >
-            Exclusive
-          </button>
         </div>
       </div>
 
@@ -451,7 +421,7 @@ const OngoingProjects = () => {
         ) : (
           <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
             <HiOutlineFolder className="text-4xl text-gray-700" />
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No {isExclusive ? 'Exclusive ' : ''}Ongoing Projects Found</p>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No {filterProjectType} Ongoing Projects Found</p>
           </div>
         )}
       </div>
@@ -488,7 +458,7 @@ const OngoingProjects = () => {
                <button onClick={() => setIsAddModalOpen(false)} className="px-6 py-2 rounded-xl border border-white/10 text-white uppercase text-xs font-bold">Cancel</button>
                <button 
                  onClick={handlePublishProject} 
-                 disabled={isSubmittingProject || !projectData.projectName || !selectedCategory || !projectData.targetAmount || !projectData.roi || !projectData.duration || (modalIsExclusive && !selectedUser)}
+                 disabled={isSubmittingProject || !projectData.projectName || !selectedCategory || !projectData.targetAmount || !projectData.roi || !projectData.duration}
                  className="px-6 py-2 rounded-xl bg-[#ccff00] text-black uppercase text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                >
                  {isSubmittingProject ? 'Saving...' : 'Save Changes'}

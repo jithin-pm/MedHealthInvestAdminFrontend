@@ -55,6 +55,10 @@ export const getEnquiriesByTypeApi = async (type) => {
     return await commonApi("GET", `/api/enquiry/type/${type}`, "", "");
 };
 
+export const updateEnquiryStatusApi = async (id, data) => {
+    return await commonApi("PUT", `/api/enquiry/${id}/status`, data, "");
+};
+
 // Chat APIs
 export const getActiveChatsApi = async () => {
     return await commonApi("GET", "/api/chat/active-chats", "", "");
@@ -103,4 +107,48 @@ export const getDashboardStatsApi = async () => {
 // User Verification details API
 export const getUserVerificationStatusApi = async (userId) => {
     return await commonApi("GET", `/api/auth/verification-status/${userId}`, "", "");
+};
+
+// Special Projects APIs
+export const addSpecialProjectApi = async (data) => {
+    return await commonApi("POST", "/api/special-projects/add", data, {
+        "Content-Type": "multipart/form-data"
+    });
+};
+
+export const getAllSpecialProjectsApi = async () => {
+    return await commonApi("GET", "/api/special-projects/all", "", "");
+};
+
+export const getSpecialProjectByIdApi = async (id) => {
+    return await commonApi("GET", `/api/special-projects/${id}`, "", "");
+};
+
+export const editSpecialProjectApi = async (id, data) => {
+    return await commonApi("PUT", `/api/special-projects/edit/${id}`, data, {
+        "Content-Type": "multipart/form-data"
+    });
+};
+
+export const deleteSpecialProjectApi = async (id) => {
+    return await commonApi("DELETE", `/api/special-projects/delete/${id}`, {}, "");
+};
+
+// Special Payment APIs
+export const getSpecialInvestorsApi = async (projectId) => {
+    return await commonApi("GET", `/api/special-payment/investors/${projectId}`, "", "");
+};
+
+export const recordSpecialPaybackApi = async (investmentId, data) => {
+    return await commonApi("POST", `/api/special-payment/record-monthly-payback/${investmentId}`, data, {
+        "Content-Type": "multipart/form-data"
+    });
+};
+
+export const getSpecialPayoutScheduleApi = async (investmentId) => {
+    return await commonApi("GET", `/api/special-payment/payout-schedule/${investmentId}`, "", "");
+};
+
+export const getLedgerHistoryApi = async (investmentId) => {
+    return await commonApi("GET", `/api/special-payment/ledger-history/${investmentId}`, "", "");
 };

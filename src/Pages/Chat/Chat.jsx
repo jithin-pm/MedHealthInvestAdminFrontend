@@ -5,7 +5,10 @@ import { FiPaperclip, FiLink2, FiMic, FiSquare, FiDownload, FiPlay, FiX, FiTrash
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import { MdSupportAgent } from 'react-icons/md';
 import { TbChecks } from 'react-icons/tb';
+import { PiPhoneCallBold } from 'react-icons/pi';
+import { MdPhoneMissed } from 'react-icons/md';
 import io from 'socket.io-client';
+import AudioCall from '../../Components/AudioCall';
 import { getActiveChatsApi, getChatMessagesApi, uploadChatFileApi, deleteChatMessageApi } from '../../services/allApi';
 import { BASE_URL } from '../../services/baseUrl';
 
@@ -25,6 +28,17 @@ export default function Chat() {
   const [linkUrl, setLinkUrl] = useState('');
   const [mediaModal, setMediaModal] = useState({ isOpen: false, url: '', type: '' });
   const [activeMenu, setActiveMenu] = useState(null);
+  const [callState, setCallState] = useState({
+    isOpen: false,
+    isIncoming: false,
+    isOutgoing: false,
+    callerName: '',
+    channelName: '',
+    callerId: null,
+    callerRole: null,
+    remoteStatus: null,
+    reason: null
+  });
 
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -82,10 +96,134 @@ export default function Chat() {
       }
     });
 
+    // Call Socket Events
+    newSocket.on('incoming_call', (data) => {
+      console.log("INCOMING CALL RECEIVED (Admin):", data);
+      setCallState({
+        isOpen: true,
+        isIncoming: true,
+        isOutgoing: false,
+        callerName: data.callerName || 'User',
+        channelName: data.channelName,
+        callerId: data.callerId,
+        callerRole: data.callerRole,
+        remoteStatus: null,
+        reason: null
+      });
+    });
+
+    newSocket.on('call_accepted', (data) => {
+      setCallState(prev => {
+        if (prev.channelName === data.channelName) {
+          if (prev.isIncoming) {
+            return { ...prev, isOpen: false };
+          }
+          return { ...prev, remoteStatus: 'accepted' };
+        }
+        return prev;
+      });
+    });
+
+    newSocket.on('call_status', (data) => {
+      setCallState(prev => {
+        if (prev.isOpen && prev.remoteStatus !== 'accepted' && prev.remoteStatus !== 'rejected') {
+          return { ...prev, remoteStatus: data.status };
+        }
+        return prev;
+      });
+    });
+
+    newSocket.on('call_rejected', (data) => {
+      const reason = data?.reason || 'declined';
+      setCallState(prev => {
+        if (prev.isIncoming) {
+          return { ...prev, isOpen: false };
+        }
+        return { ...prev, remoteStatus: 'rejected', reason: reason };
+      });
+    });
+
+    newSocket.on('call_ended', () => {
+      setCallState(prev => ({ ...prev, isOpen: false }));
+    });
+
     return () => {
       newSocket.disconnect();
     };
   }, []);
+
+  const initiateCall = () => {
+    if (!socket || !selectedUserRef.current) return;
+    const currentSelected = selectedUserRef.current;
+    const chatId = currentSelected.id || currentSelected._id;
+    const channelName = `call_medhealth_${chatId}_${Date.now()}`;
+    
+    socket.emit('initiate_call', {
+      callerId: 1,
+      receiverId: chatId,
+      receiverRole: 'user',
+      channelName,
+      callerName: 'Support Agent',
+      isVideo: false
+    });
+
+    const isOnline = onlineUsers[String(chatId)]?.isOnline;
+
+    setCallState({
+      isOpen: true,
+      isIncoming: false,
+      isOutgoing: true,
+      callerName: currentSelected.fullName || currentSelected.name || 'User',
+      channelName,
+      callerId: chatId,
+      callerRole: 'admin',
+      remoteStatus: isOnline ? 'ringing' : 'calling',
+      reason: null
+    });
+  };
+
+  const acceptCall = () => {
+    if (socket && callState.channelName) {
+      socket.emit('accept_call', {
+        callerId: callState.callerId || (selectedUserRef.current?.id || selectedUserRef.current?._id),
+        callerRole: callState.callerRole || 'user',
+        channelName: callState.channelName
+      });
+      setCallState(prev => ({ ...prev, isIncoming: false, isOutgoing: false }));
+    }
+  };
+
+  const rejectCall = (reason = 'declined') => {
+    if (socket && callState.channelName) {
+      const targetId = callState.callerId || (selectedUserRef.current ? (selectedUserRef.current.id || selectedUserRef.current._id) : null);
+      socket.emit('reject_call', {
+        targetId: targetId,
+        targetRole: 'user',
+        channelName: callState.channelName,
+        reason: reason
+      });
+      
+      if (callState.isOutgoing && reason === 'timeout') {
+        setCallState(prev => ({ ...prev, remoteStatus: 'rejected', reason: 'timeout' }));
+      } else {
+        setCallState(prev => ({ ...prev, isOpen: false }));
+      }
+    }
+  };
+
+  const endCall = (duration = 0) => {
+    if (socket && callState.channelName) {
+      const targetId = callState.callerId || (selectedUserRef.current ? (selectedUserRef.current.id || selectedUserRef.current._id) : null);
+      socket.emit('end_call', {
+        otherId: targetId,
+        otherRole: 'user',
+        channelName: callState.channelName,
+        duration: duration,
+        isOutgoing: callState.isOutgoing
+      });
+      setCallState(prev => ({ ...prev, isOpen: false }));
+    }
+  };
 
   // Single stable socket listener
   useEffect(() => {
@@ -153,7 +291,19 @@ export default function Chat() {
     try {
       const res = await getActiveChatsApi();
       if (res.status === 200) {
-        setActiveUsers(res.data.users);
+        setActiveUsers(prev => {
+          const fetchedUsers = res.data.users || res.data.activeChats || [];
+          const currentUser = selectedUserRef.current;
+          
+          if (currentUser) {
+            // Check if currentUser is in fetchedUsers
+            const exists = fetchedUsers.find(u => String(u.id) === String(currentUser.id));
+            if (!exists) {
+              return [currentUser, ...fetchedUsers];
+            }
+          }
+          return fetchedUsers;
+        });
       }
     } catch (error) {
       console.error('Failed to fetch active chats:', error);
@@ -434,6 +584,42 @@ export default function Chat() {
         );
       default: {
         if (!msg.content) return null;
+        if (msg.content === 'MISSED_CALL' || msg.content === 'DECLINED_CALL') {
+          const text = msg.content === 'MISSED_CALL' ? 'Missed Audio Call' : 'Declined Audio Call';
+          return (
+            <div className="flex items-center gap-2.5 py-1">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isAdmin ? 'bg-black/10 text-black' : 'bg-red-500/10 text-red-500'}`}>
+                <MdPhoneMissed className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-[14px] font-bold ${isAdmin ? 'text-black' : 'text-red-500'}`}>
+                  {text}
+                </span>
+              </div>
+            </div>
+          );
+        }
+        if (msg.content && msg.content.startsWith('CALL_ENDED_')) {
+          const duration = parseInt(msg.content.split('_')[2] || '0', 10);
+          const m = Math.floor(duration / 60);
+          const s = duration % 60;
+          const durationText = m > 0 ? `${m}m ${s}s` : `${s}s`;
+          return (
+            <div className="flex items-center gap-2.5 py-1">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isAdmin ? 'bg-black/10 text-black' : 'bg-blue-500/10 text-blue-400'}`}>
+                <PiPhoneCallBold className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-[14px] font-bold ${isAdmin ? 'text-black' : 'text-blue-400'}`}>
+                  Audio Call
+                </span>
+                <span className={`text-[12px] font-medium ${isAdmin ? 'text-black/70' : 'text-gray-400'}`}>
+                  {durationText}
+                </span>
+              </div>
+            </div>
+          );
+        }
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const parts = msg.content.split(urlRegex);
         return (
@@ -626,6 +812,15 @@ export default function Chat() {
                       )}
                     </div>
                   </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={initiateCall}
+                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ccff00] hover:text-black text-white flex items-center justify-center transition-all duration-300 shadow-md"
+                    title="Start Audio Call"
+                  >
+                    <PiPhoneCallBold className="text-xl" />
+                  </button>
                 </div>
               </div>
 
@@ -887,6 +1082,25 @@ export default function Chat() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Audio Call Component */}
+      {callState.isOpen && (
+        <AudioCall
+          isOpen={callState.isOpen}
+          isIncoming={callState.isIncoming}
+          isOutgoing={callState.isOutgoing}
+          callerName={callState.callerName}
+          channelName={callState.channelName}
+          accessToken={localStorage.getItem("adminToken")}
+          onAccept={acceptCall}
+          onReject={rejectCall}
+          onEnd={endCall}
+          remoteStatus={callState.remoteStatus}
+          reason={callState.reason}
+          onCallAgain={initiateCall}
+          onClose={() => setCallState(prev => ({ ...prev, isOpen: false, remoteStatus: null }))}
+        />
       )}
 
     </div>

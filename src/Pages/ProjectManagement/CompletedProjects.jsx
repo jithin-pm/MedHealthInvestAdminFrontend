@@ -26,7 +26,6 @@ const getImageUrl = (img) => {
 };
 
 const CompletedProjects = () => {
-  const [isExclusive, setIsExclusive] = useState(false);
   const [subTab, setSubTab] = useState('unsettled'); // 'unsettled' or 'settled'
   const [allProjects, setAllProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,16 +51,14 @@ const CompletedProjects = () => {
 
   const status = 'Completed';
   const title = `${status} Projects`;
-  const description = subTab === 'settled' 
-    ? `View finalized ${isExclusive ? 'exclusive ' : ''}initiatives where all investor payouts have been recorded.`
-    : `Audit and manage ${isExclusive ? 'exclusive ' : ''}matured projects awaiting final institutional settlement.`;
+  const description = `View and manage all completed investment projects here.`;
 
   const filteredProjects = allProjects.filter(p => {
-    const isCorrectType = isExclusive ? p.projectType === 'Exclusive' : p.projectType === 'Standard';
+    if (p.projectType !== 'Standard') return false;
     const isTargetStatus = subTab === 'settled' 
       ? p.status === 'COMPLETED' 
       : (p.status === 'ONGOING' && p.completionDate && new Date(p.completionDate) <= new Date());
-    return isCorrectType && isTargetStatus;
+    return isTargetStatus;
   });
 
   const handleViewDetails = (project) => {
@@ -95,36 +92,13 @@ const CompletedProjects = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{title}</h1>
             <p className="text-gray-400 text-sm md:text-base max-w-2xl">{description}</p>
           </div>
-          
-          <div className="flex bg-[#111] border border-white/10 rounded-xl p-1 w-full sm:w-auto shrink-0">
-            <button
-              onClick={() => setIsExclusive(false)}
-              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 ${
-                !isExclusive 
-                  ? 'bg-white/10 text-white shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              Standard
-            </button>
-            <button
-              onClick={() => setIsExclusive(true)}
-              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${
-                isExclusive 
-                  ? 'bg-[#ccff00] text-black shadow-sm' 
-                  : 'text-gray-500 hover:text-[#ccff00]'
-              }`}
-            >
-              Exclusive
-            </button>
-          </div>
         </div>
 
         {/* Sub-Tabs: Settled vs Unsettled */}
         <div className="flex items-center gap-2 border-b border-white/5 pb-1">
            {[
-             { id: 'unsettled', label: 'Pending Settlement', icon: HiOutlineClock, count: allProjects.filter(p => (isExclusive ? p.projectType === 'Exclusive' : p.projectType === 'Standard') && p.status === 'ONGOING' && p.completionDate && new Date(p.completionDate) <= new Date()).length },
-             { id: 'settled', label: 'Fully Settled', icon: HiOutlineCheckCircle, count: allProjects.filter(p => (isExclusive ? p.projectType === 'Exclusive' : p.projectType === 'Standard') && p.status === 'COMPLETED').length }
+             { id: 'unsettled', label: 'Pending Settlement', icon: HiOutlineClock, count: allProjects.filter(p => p.projectType === 'Standard' && p.status === 'ONGOING' && p.completionDate && new Date(p.completionDate) <= new Date()).length },
+             { id: 'settled', label: 'Fully Settled', icon: HiOutlineCheckCircle, count: allProjects.filter(p => p.projectType === 'Standard' && p.status === 'COMPLETED').length }
            ].map(tab => (
              <button
                key={tab.id}

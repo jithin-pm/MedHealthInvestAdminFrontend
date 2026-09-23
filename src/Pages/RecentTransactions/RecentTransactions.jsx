@@ -33,6 +33,7 @@ const RecentTransactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [pdfModalUrl, setPdfModalUrl] = useState(null);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -274,7 +275,9 @@ const RecentTransactions = () => {
                       <span className={`text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase ${
                         tx.project?.projectType === 'Exclusive' 
                           ? 'bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20' 
-                          : 'bg-white/5 text-gray-400 border border-white/10'
+                          : tx.project?.projectType === 'Special'
+                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                            : 'bg-white/5 text-gray-400 border border-white/10'
                       }`}>
                         {tx.project?.projectType || 'Standard'}
                       </span>
@@ -311,62 +314,51 @@ const RecentTransactions = () => {
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex items-center justify-center gap-2">
-                         <button
-                            onClick={() => {
-                               const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
-                               if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
-                                  generateInvestmentReceipt({
-                                     amount: tx.amount,
-                                     paymentId: tx.transactionId,
-                                     projectTitle: tx.project?.projectName,
-                                     duration: tx.project?.duration || 1,
-                                     isPayout: tx.type === 'PAYOUT',
-                                     isRefund: tx.type === 'REFUND',
-                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
-                                  }, userData, 'view');
-                               } else {
-                                  generateInvestmentReceipt({
-                                     amount: tx.amount,
-                                     paymentId: tx.transactionId,
-                                     projectTitle: tx.project?.projectName,
-                                     duration: tx.project?.duration || 1,
-                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
-                                  }, userData, 'view');
-                               }
-                            }}
-                            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#ccff00] hover:bg-[#ccff00] hover:text-black transition-all"
-                            title="View Receipt"
-                         >
-                            <FiPaperclip size={14} />
-                         </button>
-                         <button
-                            onClick={() => {
-                               const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
-                               if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
-                                  generateInvestmentReceipt({
-                                     amount: tx.amount,
-                                     paymentId: tx.transactionId,
-                                     projectTitle: tx.project?.projectName,
-                                     duration: tx.project?.duration || 1,
-                                     isPayout: tx.type === 'PAYOUT',
-                                     isRefund: tx.type === 'REFUND',
-                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
-                                  }, userData, 'download');
-                               } else {
-                                  generateInvestmentReceipt({
-                                     amount: tx.amount,
-                                     paymentId: tx.transactionId,
-                                     projectTitle: tx.project?.projectName,
-                                     duration: tx.project?.duration || 1,
-                                     paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null
-                                  }, userData, 'download');
-                               }
-                            }}
-                            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 hover:text-white transition-all"
-                            title="Download Receipt"
-                         >
-                            <FiDownload size={14} />
-                         </button>
+                         {tx.type === 'PAYOUT' || tx.type === 'REFUND' ? (
+                           <>
+                             <button
+                                onClick={async () => {
+                                   const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
+                                   const url = await generateInvestmentReceipt({
+                                      amount: tx.amount,
+                                      paymentId: tx.transactionId,
+                                      projectTitle: tx.project?.projectName,
+                                      duration: tx.project?.duration || 1,
+                                      isPayout: tx.type === 'PAYOUT',
+                                      isRefund: tx.type === 'REFUND',
+                                      paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null,
+                                      projectType: tx.project?.projectType || 'SPECIAL'
+                                   }, userData, 'view');
+                                   if (url) setPdfModalUrl(url);
+                                }}
+                                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#ccff00] hover:bg-[#ccff00] hover:text-black transition-all"
+                                title="View Receipt"
+                             >
+                                <FiPaperclip size={14} />
+                             </button>
+                             <button
+                                onClick={() => {
+                                   const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
+                                   generateInvestmentReceipt({
+                                      amount: tx.amount,
+                                      paymentId: tx.transactionId,
+                                      projectTitle: tx.project?.projectName,
+                                      duration: tx.project?.duration || 1,
+                                      isPayout: true,
+                                      isRefund: false,
+                                      paybackProof: tx.paybackProof ? `${BASE_URL}/${tx.paybackProof}` : null,
+                                      projectType: tx.project?.projectType || 'SPECIAL'
+                                   }, userData, 'download');
+                                }}
+                                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 hover:text-white transition-all"
+                                title="Download Receipt"
+                             >
+                                <FiDownload size={14} />
+                             </button>
+                           </>
+                         ) : (
+                           <span className="text-gray-500 text-[0.65rem] font-mono">---</span>
+                         )}
                       </div>
                     </td>
                   </tr>
@@ -415,6 +407,36 @@ const RecentTransactions = () => {
           </div>
         )}
       </div>
+
+      {/* PDF Viewer Modal */}
+      {pdfModalUrl && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setPdfModalUrl(null)}
+        >
+          <div 
+            className="bg-[#0c0c0c] border border-white/10 rounded-2xl w-full max-w-4xl h-[90vh] mx-4 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#111]">
+              <h3 className="text-white font-bold text-sm tracking-widest uppercase">Receipt Document</h3>
+              <button
+                onClick={() => setPdfModalUrl(null)}
+                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 w-full bg-black">
+              <iframe 
+                src={pdfModalUrl} 
+                className="w-full h-full border-none"
+                title="PDF Receipt"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

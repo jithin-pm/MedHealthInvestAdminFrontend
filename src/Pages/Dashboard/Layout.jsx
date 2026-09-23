@@ -123,9 +123,26 @@ const DashboardLayout = () => {
         { to: '/dashboard/projects/expired', label: 'Expired Projects' },
       ]
     },
+    { 
+      to: '/dashboard/exclusive-projects', 
+      label: 'Exclusive Projects', 
+      icon: LuCrown,
+      subLinks: [
+        { to: '/dashboard/exclusive-projects', label: 'Exclusive Project Management' },
+        { to: '/dashboard/enquiries/exclusive', label: 'Exclusive Enquiries' }
+      ]
+    },
+    { 
+      to: '/dashboard/special-projects', 
+      label: 'Special Projects', 
+      icon: HiOutlineStar,
+      subLinks: [
+        { to: '/dashboard/special-projects', label: 'Special Project Management' },
+        { to: '/dashboard/enquiries/special', label: 'Special Projects Enquiries' }
+      ]
+    },
     { to: '/dashboard/transactions', label: 'Recent Transactions', icon: HiOutlineCurrencyDollar },
     { to: '/dashboard/enquiries', label: 'Enquiries', icon: HiOutlineChatAlt2 },
-    { to: '/dashboard/enquiries/exclusive', label: 'Exclusive Enquiries', icon: LuCrown },
     { to: '/dashboard/chat', label: 'Chat', icon: HiOutlineChat },
   ];
 
