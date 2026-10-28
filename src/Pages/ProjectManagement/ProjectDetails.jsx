@@ -33,6 +33,13 @@ const ProjectDetails = () => {
   const [project, setProject] = React.useState(location.state?.project || null);
   const [loading, setLoading] = React.useState(!location.state?.project);
 
+  // Auto-redirect to exclusive-projects route if viewing an exclusive project under projects route
+  React.useEffect(() => {
+    if (project?.projectType === 'Exclusive' && location.pathname.startsWith('/dashboard/projects/details/')) {
+      navigate(`/dashboard/exclusive-projects/details/${project.id || id}`, { replace: true, state: location.state });
+    }
+  }, [project, location.pathname, id, navigate]);
+
   // Investor List State
   const [isInvestorModalOpen, setIsInvestorModalOpen] = React.useState(false);
   const [investors, setInvestors] = React.useState([]);
@@ -182,11 +189,19 @@ const ProjectDetails = () => {
       {/* Navigation Header */}
       <div className="flex items-center justify-between mb-12">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (project?.projectType === 'Exclusive') {
+              navigate('/dashboard/exclusive-projects');
+            } else {
+              navigate(-1);
+            }
+          }}
           className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/[0.03] border border-white/10 text-white hover:bg-white/10 transition-all group"
         >
           <HiOutlineChevronLeft className="text-xl group-hover:-translate-x-1 transition-transform" />
-          <span className="text-xs font-black uppercase tracking-widest">Back to Projects</span>
+          <span className="text-xs font-black uppercase tracking-widest">
+            {project?.projectType === 'Exclusive' ? 'Back to Exclusive Projects' : 'Back to Projects'}
+          </span>
         </button>
       </div>
 
@@ -211,6 +226,12 @@ const ProjectDetails = () => {
                   <span className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[0.65rem] font-black rounded-lg uppercase tracking-widest">
                     <HiOutlineStar className="text-[#ccff00]" />
                     Exclusive
+                  </span>
+                )}
+                {project.status === 'EXPIRED' && (
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[0.65rem] font-black rounded-lg uppercase tracking-widest animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                    <HiOutlineClock className="text-sm text-rose-400" />
+                    Refund Pending
                   </span>
                 )}
                 <span className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-[0.2em] ml-2">Established 2024</span>
@@ -260,7 +281,7 @@ const ProjectDetails = () => {
           {[
             { label: 'Target ROI', value: `${project.roi}%`, icon: HiOutlineTrendingUp, color: 'text-[#ccff00]' },
             { label: 'Duration', value: `${project.duration} Months`, icon: HiOutlineClock, color: 'text-blue-400' },
-            { label: 'Target Amount', value: `₹${Number(project.targetAmount).toLocaleString('en-IN')}`, icon: HiOutlineCurrencyRupee, color: 'text-purple-400' },
+            { label: 'Target Amount', value: `₹\u2009${Number(project.targetAmount).toLocaleString('en-IN')}`, icon: HiOutlineCurrencyRupee, color: 'text-purple-400' },
           ].map((stat, i) => (
             <div key={i} className="bg-[#0c0c0c] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors group">
               <div className={`p-3 rounded-2xl bg-white/[0.03] w-fit mb-6 group-hover:scale-110 transition-transform`}>
@@ -343,12 +364,12 @@ const ProjectDetails = () => {
               <div className="space-y-2">
                 <p className="text-[0.7rem] text-gray-500 font-bold uppercase tracking-[0.3em]">Capital Secured</p>
                 <p className="text-5xl md:text-7xl font-black text-[#ccff00] ">
-                  ₹{Number(project.collectedAmount || 0).toLocaleString('en-IN')}
+                  <span className="mr-0.5">₹</span>{Number(project.collectedAmount || 0).toLocaleString('en-IN')}
                 </p>
               </div>
               <div className="text-left md:text-right space-y-2">
                 <p className="text-[0.7rem] text-gray-500 font-bold uppercase tracking-[0.3em]">Investment Goal</p>
-                <p className="text-2xl md:text-4xl font-bold text-white">₹{Number(project.targetAmount).toLocaleString('en-IN')}</p>
+                <p className="text-2xl md:text-4xl font-bold text-white"><span className="mr-1">₹</span>{Number(project.targetAmount).toLocaleString('en-IN')}</p>
               </div>
             </div>
 
@@ -372,11 +393,11 @@ const ProjectDetails = () => {
 
               {(project.status === 'ONGOING' || project.status === 'EXPIRED') && (
                 <button 
-                  onClick={() => navigate(`/dashboard/projects/settlement/${id}`)}
+                  onClick={() => navigate(project.projectType === 'Exclusive' ? `/dashboard/exclusive-projects/settlement/${id}` : `/dashboard/projects/settlement/${id}`)}
                   className="px-8 py-4 rounded-2xl bg-white hover:bg-gray-200 text-black font-black text-[0.7rem] tracking-[0.2em] uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
                 >
                   <HiOutlineCheckCircle className="text-lg" />
-                  Mark as Completed
+                  {project.status === 'EXPIRED' ? 'Process Refunds' : 'Mark as Completed'}
                 </button>
               )}
               <button 
@@ -416,7 +437,7 @@ const ProjectDetails = () => {
                 <h2 className="text-3xl font-black text-white  uppercase">Project Investors</h2>
               </div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em]">
-                {project?.projectName} • Total Capital Secured: <span className="text-white">₹{Number(project?.collectedAmount).toLocaleString()}</span>
+                {project?.projectName} • Total Capital Secured: <span className="text-white"><span className="mr-0.5">₹</span>{Number(project?.collectedAmount).toLocaleString()}</span>
               </p>
             </div>
             <button
@@ -452,7 +473,14 @@ const ProjectDetails = () => {
                         <HiOutlineUser className="text-2xl" />
                       </div>
                       <div>
-                        <p className="text-xl font-bold text-white ">{inv.investor?.fullName || 'Unknown User'}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xl font-bold text-white ">{inv.investor?.fullName || 'Unknown User'}</p>
+                          {(inv.investor?.customUserId || inv.investor?.id) && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                              {inv.investor?.customUserId || `MHI2026${String(inv.investor?.id).padStart(2, '0')}`}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-gray-500 text-sm font-medium">{inv.investor?.email}</p>
                       </div>
                     </div>
@@ -463,7 +491,7 @@ const ProjectDetails = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-semibold text-white ">₹{Number(inv.amount).toLocaleString('en-IN')}</p>
+                      <p className="text-2xl font-semibold text-white "><span className="mr-1">₹</span>{Number(inv.amount).toLocaleString('en-IN')}</p>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
                       <p className="text-sm font-bold text-white">

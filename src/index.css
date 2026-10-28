@@ -2,7 +2,7 @@
 
 * {
 
-    font-family: "Poppins", sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 
@@ -27,7 +27,7 @@ video {
 }
 
 video::-webkit-media-controls-panel {
-  background-image: linear-gradient(transparent, rgba(0,0,0,0.5)) !important;
+  background-image: linear-gradient(transparent, rgba(0, 0, 0, 0.5)) !important;
 }
 
 video::-webkit-media-controls-timeline {
@@ -54,12 +54,45 @@ video::-webkit-media-controls-time-remaining-display {
 }
 
 /* Remove increment/decrement arrows from number inputs globally */
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  margin: 0; 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+/* Ensure buttons with lime green (# cff00) background have black text */
+button[style*="204, 255, 0"],
+button[style*="#ccff00"],
+.swal2-confirm[style*="204, 255, 0"],
+.swal2-confirm[style*="#ccff00"],
+.swal2-styled.swal2-confirm[style*="204, 255, 0"],
+.swal2-styled.swal2-confirm[style*="#ccff00"],
+.swal2-confirm.text-black {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* Ensure buttons with black/dark background have white text */
+button[style*="rgb(0, 0, 0)"],
+button[style*="#000000"],
+button[style*="#000"],
+.swal2-confirm[style*="rgb(0, 0, 0)"],
+.swal2-confirm[style*="#000000"],
+.swal2-confirm[style*="#000"],
+.swal2-styled.swal2-confirm[style*="rgb(0, 0, 0)"],
+.swal2-styled.swal2-confirm[style*="#000000"],
+.swal2-styled.swal2-confirm[style*="#000"],
+.premium-swal-button {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.swal2-cancel,
+.swal2-styled.swal2-cancel,
+button.swal2-cancel {
+  color: #ffffff !important;
 }

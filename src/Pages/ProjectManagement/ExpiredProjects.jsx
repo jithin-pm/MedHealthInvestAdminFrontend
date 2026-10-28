@@ -108,6 +108,11 @@ const ExpiredProjects = () => {
                 <div className="absolute top-4 left-4 bg-red-500 text-white text-[0.6rem] font-black px-2.5 py-1 uppercase rounded tracking-[0.15em] shadow-lg flex items-center gap-1">
                   <HiOutlineClock /> EXPIRED
                 </div>
+                {!project.isSettled && (
+                  <div className="absolute top-4 right-4 bg-rose-500/90 text-white text-[0.6rem] font-black px-2.5 py-1 uppercase rounded tracking-[0.15em] shadow-lg flex items-center gap-1 animate-pulse">
+                    <HiOutlineClock /> REFUND PENDING
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col flex-1 p-6 lg:p-8">
@@ -117,11 +122,11 @@ const ExpiredProjects = () => {
                 <div className="grid grid-cols-2 gap-y-6 mb-6 pt-2">
                   <div className="flex flex-col">
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Final Raised</span>
-                    <span className="text-xl font-bold text-zinc-200">₹{Number(project.collectedAmount || 0).toLocaleString('en-IN')}</span>
+                    <span className="text-xl font-bold text-zinc-200"><span className="mr-0.5">₹</span>{Number(project.collectedAmount || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Target</span>
-                    <span className="text-lg font-medium text-gray-500">₹{Number(project.targetAmount).toLocaleString('en-IN')}</span>
+                    <span className="text-lg font-medium text-gray-500"><span className="mr-0.5">₹</span>{Number(project.targetAmount).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -160,7 +165,7 @@ const ExpiredProjects = () => {
                       className="flex-1 py-3.5 rounded-xl bg-[#ccff00] hover:bg-[#b8e600] text-black transition-all duration-300 flex items-center justify-center gap-2.5 group/pay"
                     >
                       <HiOutlineCurrencyDollar className="text-black text-xl group-hover:rotate-12 transition-transform" />
-                      <span className="text-[0.7rem] font-black uppercase tracking-[0.2em]">Pay Back</span>
+                      <span className="text-[0.7rem] font-black uppercase tracking-[0.2em]">Process Refund</span>
                     </button>
                   )}
                 </div>

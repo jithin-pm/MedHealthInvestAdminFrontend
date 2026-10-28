@@ -171,17 +171,26 @@ export const generateTransactionReport = (transactions, filterType = 'ALL') => {
         doc.setTextColor(150, 150, 150);
         doc.text('No transactions found for the selected financial year and payment type.', 20, currentY + 10);
     } else {
-        const tableData = filtered.map((tx, index) => [
-            index + 1,
-            tx.user?.fullName || 'N/A',
-            tx.project?.projectName || 'N/A',
-            tx.type,
-            new Date(tx.transactionDate).toLocaleDateString('en-GB', {
-                day: '2-digit', month: 'short', year: 'numeric'
-            }),
-            `INR ${Number(tx.amount).toLocaleString('en-IN')}`,
-            tx.status === 'SUCCESS' ? 'Completed' : tx.status
-        ]);
+        const tableData = filtered.map((tx, index) => {
+            const isSpecial = tx.project?.projectType === 'Special' || tx.transactionId?.startsWith('SP_PAYOUT_');
+            const category = tx.payoutCategory || (
+                tx.description?.toLowerCase().includes('interest') ? 'INTEREST RETURNED' :
+                tx.description?.toLowerCase().includes('capital') ? 'CAPITAL RETURNED' : null
+            );
+            const typeLabel = isSpecial && category ? category : tx.type;
+
+            return [
+                index + 1,
+                tx.user?.fullName || 'N/A',
+                tx.project?.projectName || 'N/A',
+                typeLabel,
+                new Date(tx.transactionDate).toLocaleDateString('en-GB', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                }),
+                `INR ${Number(tx.amount).toLocaleString('en-IN')}`,
+                tx.status === 'SUCCESS' ? 'Completed' : tx.status
+            ];
+        });
 
         autoTable(doc, {
             startY: currentY,

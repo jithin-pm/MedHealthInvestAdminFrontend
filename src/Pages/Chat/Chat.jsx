@@ -353,7 +353,8 @@ export default function Chat() {
 
   const filteredUsers = activeUsers.filter(u => 
     u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.customUserId && u.customUserId.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleSendText = (e) => {
@@ -709,7 +710,7 @@ export default function Chat() {
       <div className="flex-1 w-full flex relative z-10">
         
         {/* Left Sidebar */}
-        <div className="w-full md:w-[320px] lg:w-[380px] border-r border-white/10 flex flex-col shrink-0 bg-[#0c0c0c]">
+        <div className={`w-full md:w-[320px] lg:w-[380px] border-r border-white/10 flex-col shrink-0 bg-[#0c0c0c] ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-6 pb-4 border-b border-white/5">
             <div className="flex items-center gap-4 mb-6">
               <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-400 hover:text-white">
@@ -747,7 +748,12 @@ export default function Chat() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <h3 className="font-bold text-white truncate text-[15px]">{user.fullName}</h3>
+                    <div className="flex items-center gap-2 truncate">
+                      <h3 className="font-bold text-white truncate text-[15px]">{user.fullName}</h3>
+                      <span className="px-1.5 py-0.5 rounded text-[0.65rem] font-mono font-semibold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider shrink-0">
+                        {user.customUserId || (user.id ? `MHI2026${String(user.id).padStart(2, '0')}` : '---')}
+                      </span>
+                    </div>
                     {onlineUsers[String(user.id)]?.isOnline ? (
                       <span className="text-[10px] font-bold text-green-400 shrink-0 tracking-wider">Online</span>
                     ) : onlineUsers[String(user.id)]?.lastSeen ? (
@@ -782,41 +788,55 @@ export default function Chat() {
         </div>
 
         {/* Right Chat Area */}
-        <div className="flex-1 flex flex-col bg-[#111] relative">
+        <div className={`flex-1 flex-col bg-[#111] relative w-full ${selectedUser ? 'flex' : 'hidden md:flex'}`}>
           {selectedUser ? (
             <>
               {/* Chat Header */}
-              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-[#0c0c0c]">
-                <div className="flex items-center gap-4">
+              <div className="px-4 py-3 sm:p-6 border-b border-white/5 flex items-center justify-between bg-[#0c0c0c] gap-2">
+                <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1">
+                  {/* Mobile Back Button */}
+                  <button
+                    onClick={() => setSelectedUser(null)}
+                    className="md:hidden p-1.5 -ml-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                    title="Back to messages"
+                  >
+                    <HiArrowLeft className="text-xl" />
+                  </button>
+
                   <div className="w-10 h-10 rounded-full bg-[#ccff00]/10 flex items-center justify-center border border-[#ccff00]/20 relative shrink-0">
                     <FiUser className="text-[#ccff00] text-lg" />
                     {onlineUsers[String(selectedUser.id)]?.isOnline && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2 border-[#0c0c0c] block" />
                     )}
                   </div>
-                  <div>
-                    <h2 className="font-bold text-white leading-tight">{selectedUser.fullName}</h2>
-                    <div className="flex items-center gap-3 mt-0.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold text-white leading-tight truncate text-sm sm:text-base">{selectedUser.fullName}</h2>
+                      <span className="px-2 py-0.5 rounded text-[0.7rem] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider shrink-0">
+                        {selectedUser.customUserId || (selectedUser.id ? `MHI2026${String(selectedUser.id).padStart(2, '0')}` : '---')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 mt-0.5 min-w-0">
                       {onlineUsers[String(selectedUser.id)]?.isOnline ? (
-                        <span className="text-xs text-green-400 font-semibold flex items-center gap-1.5">
+                        <span className="text-[11px] sm:text-xs text-green-400 font-semibold flex items-center gap-1.5 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                           Online
                         </span>
                       ) : onlineUsers[String(selectedUser.id)]?.lastSeen ? (
-                        <span className="text-xs text-gray-400">{formatLastSeen(onlineUsers[String(selectedUser.id)].lastSeen)}</span>
+                        <span className="text-[11px] sm:text-xs text-gray-400 shrink-0 truncate">{formatLastSeen(onlineUsers[String(selectedUser.id)].lastSeen)}</span>
                       ) : null}
                       {selectedUser.email && (
-                        <span className="text-xs text-gray-500 font-medium border-l border-white/10 pl-3">
+                        <span className="text-[11px] sm:text-xs text-gray-500 font-medium border-l border-white/10 pl-2 sm:pl-3 truncate hidden sm:inline-block">
                           {selectedUser.email}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   <button
                     onClick={initiateCall}
-                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ccff00] hover:text-black text-white flex items-center justify-center transition-all duration-300 shadow-md"
+                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ccff00] hover:text-black text-white flex items-center justify-center transition-all duration-300 shadow-md shrink-0 cursor-pointer"
                     title="Start Audio Call"
                   >
                     <PiPhoneCallBold className="text-xl" />
@@ -825,7 +845,7 @@ export default function Chat() {
               </div>
 
               {/* Messages Container */}
-              <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 {(() => {
                   let lastDateLabel = null;
                   return messages.map((msg, index) => {
@@ -886,7 +906,7 @@ export default function Chat() {
               </div>
 
               {/* Input Area */}
-              <div className="p-6 border-t border-white/5 bg-[#0c0c0c] relative">
+              <div className="p-3 sm:p-6 border-t border-white/5 bg-[#0c0c0c] relative">
                 {isRecording && (
                   <div className="absolute top-0 left-0 w-full h-full bg-[#ccff00]/10 flex items-center justify-center gap-4 z-20 backdrop-blur-sm">
                     <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
@@ -897,25 +917,25 @@ export default function Chat() {
                   </div>
                 )}
                 
-                <form onSubmit={handleSendText} className="flex items-center gap-4 max-w-4xl mx-auto">
+                <form onSubmit={handleSendText} className="flex items-center gap-2 sm:gap-4 max-w-4xl mx-auto">
                   
                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" />
                   
-                  <button type="button" onClick={() => setIsLinkModalOpen(true)} className="w-12 h-12 flex items-center justify-center rounded-full bg-[#111] hover:bg-[#ccff00]/10 text-gray-400 hover:text-[#ccff00] border border-white/5 transition-colors shrink-0" title="Share a link">
-                    <FiLink2 className="text-xl" />
+                  <button type="button" onClick={() => setIsLinkModalOpen(true)} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-[#111] hover:bg-[#ccff00]/10 text-gray-400 hover:text-[#ccff00] border border-white/5 transition-colors shrink-0" title="Share a link">
+                    <FiLink2 className="text-lg sm:text-xl" />
                   </button>
 
-                  <button type="button" onClick={handleFileSelect} className="w-12 h-12 flex items-center justify-center rounded-full bg-[#111] hover:bg-[#ccff00]/10 text-gray-400 hover:text-[#ccff00] border border-white/5 transition-colors shrink-0" title="Attach file">
-                    <FiPaperclip className="text-xl" />
+                  <button type="button" onClick={handleFileSelect} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-[#111] hover:bg-[#ccff00]/10 text-gray-400 hover:text-[#ccff00] border border-white/5 transition-colors shrink-0" title="Attach file">
+                    <FiPaperclip className="text-lg sm:text-xl" />
                   </button>
 
-                  <div className="flex-1 relative">
+                  <div className="flex-1 relative min-w-0">
                     <input 
                       type="text" 
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder={`Message ${selectedUser.fullName}...`} 
-                      className="w-full bg-[#111] border border-white/5 rounded-full px-6 py-3.5 text-sm text-white focus:outline-none focus:border-[#ccff00]/50 placeholder-gray-600"
+                      className="w-full bg-[#111] border border-white/5 rounded-full px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm text-white focus:outline-none focus:border-[#ccff00]/50 placeholder-gray-600"
                       disabled={isRecording}
                     />
                   </div>
@@ -923,12 +943,12 @@ export default function Chat() {
                   <button 
                     type="button"
                     onClick={message.trim() ? handleSendText : startRecording}
-                    className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 transition-all ${message.trim() ? 'bg-[#ccff00] text-black hover:bg-white' : 'bg-[#111] text-gray-400 hover:text-red-500 border border-white/5 hover:border-red-500'}`}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 transition-all ${message.trim() ? 'bg-[#ccff00] text-black hover:bg-white' : 'bg-[#111] text-gray-400 hover:text-red-500 border border-white/5 hover:border-red-500'}`}
                   >
                     {message.trim() ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5"><path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5"><path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" /></svg>
                     ) : (
-                      <FiMic className="text-xl" />
+                      <FiMic className="text-lg sm:text-xl" />
                     )}
                   </button>
                 </form>

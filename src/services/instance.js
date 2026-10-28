@@ -23,7 +23,7 @@ const onRefreshed = (token) => {
 
 // Helper to decide the right refresh endpoint
 const getRefreshUrl = () => {
-    return `${BASE_URL}/api/auth/refresh`;
+    return `${BASE_URL}/api/auth/admin-refresh`;
 };
 
 // Helper to get auth data
@@ -77,9 +77,10 @@ instance.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // Soft failure checks or hard 401 check
+        // Soft failure checks or hard 401 check, or 403 Access denied (Admin only)
         if (
             (response && response.status === 401) ||
+            (response && response.status === 403 && (response?.data?.message?.includes('Admin only') || response?.data?.message?.includes('Access denied'))) ||
             // Fallback for custom formatted messages
             (response?.data?.result === false &&
                 (response?.data?.message?.toLowerCase().includes('token') ||
@@ -158,10 +159,10 @@ function forceLogout() {
     window.dispatchEvent(new Event('auth_logout'));
 
     // 3. Show alert and redirect on close
-    showAlert('Session Expired', 'Your session has expired. Please login again to continue.', 'warning')
+    showAlert('Session Expired', 'Your admin session has expired. Please login again to continue.', 'warning')
         .then(() => {
-            if (window.location.pathname !== '/') {
-                window.location.href = '/';
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
             } else {
                 window.location.reload();
             }

@@ -6,12 +6,13 @@ export const showAlert = (title, text, icon) => {
         text,
         icon,
         confirmButtonColor: '#000000',
+        confirmButtonText: 'OK',
         background: '#ffffff',
         customClass: {
             popup: 'premium-swal-popup',
             title: 'premium-swal-title',
             htmlContainer: 'premium-swal-text',
-            confirmButton: 'premium-swal-button'
+            confirmButton: 'premium-swal-button !text-white text-white'
         }
     });
 };

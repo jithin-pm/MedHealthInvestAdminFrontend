@@ -13,10 +13,12 @@ import RecentTransactions from './Pages/RecentTransactions/RecentTransactions';
 import Enquiries from './Pages/Enquiries/Enquiries';
 import ExclusiveEnquiries from './Pages/Enquiries/ExclusiveEnquiries';
 import ExclusiveProjects from './Pages/ExclusiveProjects/ExclusiveProjects';
+import ExclusiveProjectDetails from './Pages/ExclusiveProjects/ExclusiveProjectDetails';
 import SpecialEnquiries from './Pages/Enquiries/SpecialEnquiries';
 import SpecialProjects from './Pages/SpecialProjects/SpecialProjects';
 import SpecialProjectDetails from './Pages/SpecialProjects/SpecialProjectDetails';
 import SpecialSettlementManagement from './Pages/SpecialProjects/SpecialSettlementManagement';
+import ProjectReminders from './Pages/ProjectReminders/ProjectReminders';
 import Chat from './Pages/Chat/Chat';
 import ProtectedRoute from './Components/Common/ProtectedRoute';
 import ScrollToTop from './Components/Common/ScrollToTop';
@@ -56,6 +58,10 @@ function App() {
           <Route path="special-projects/settlement/:id" element={<SpecialSettlementManagement />} />
 
           <Route path="exclusive-projects" element={<ExclusiveProjects />} />
+          <Route path="exclusive-projects/details/:id" element={<ExclusiveProjectDetails />} />
+          <Route path="exclusive-projects/settlement/:id" element={<SettlementManagement />} />
+
+          <Route path="project-reminders" element={<ProjectReminders />} />
 
           <Route path="transactions" element={<RecentTransactions />} />
           <Route path="enquiries" element={<Enquiries />} />

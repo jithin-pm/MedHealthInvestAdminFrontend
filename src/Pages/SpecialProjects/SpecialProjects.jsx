@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  HiOutlineEye, 
-  HiOutlinePlus, 
-  HiX, 
+import {
+  HiOutlineEye,
+  HiOutlinePlus,
+  HiX,
   HiOutlineSearch,
   HiOutlineCloudUpload,
   HiOutlineChevronDown,
@@ -12,11 +12,13 @@ import {
   HiOutlinePlay,
   HiOutlineRefresh,
   HiOutlineTrash,
-  HiOutlineInformationCircle
+  HiOutlineInformationCircle,
+  HiOutlineClock,
+  HiOutlineCheckCircle
 } from 'react-icons/hi';
-import { 
-  
-  
+import {
+
+
   addSpecialProjectApi, getAllSpecialProjectsApi, editSpecialProjectApi, deleteSpecialProjectApi,
   getAllUsersApi, getUserFinancialDetailsApi
 } from '../../services/allApi';
@@ -31,10 +33,10 @@ const getImageUrl = (img) => {
 };
 
 const SpecialProjects = () => {
-  
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-          
-        
+
+
   // Project State
   const [allProjects, setAllProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,10 +46,11 @@ const SpecialProjects = () => {
     projectName: '',
     targetAmount: '',
     roi: '',
-    
-    collectedAmount: '',  });
-  
-    const [isSubmittingProject, setIsSubmittingProject] = useState(false);
+
+    collectedAmount: '',
+  });
+
+  const [isSubmittingProject, setIsSubmittingProject] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editProjectId, setEditProjectId] = useState(null);
@@ -65,8 +68,8 @@ const SpecialProjects = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserSearchOpen, setIsUserSearchOpen] = useState(false);
 
-  
-      const userSearchRef = React.useRef(null);
+
+  const userSearchRef = React.useRef(null);
   const preSettledProofRef = React.useRef(null);
   const navigate = useNavigate();
 
@@ -83,7 +86,7 @@ const SpecialProjects = () => {
     }
   }, [location.state]);
 
-  
+
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
@@ -111,22 +114,23 @@ const SpecialProjects = () => {
 
   // Fetch data on mount
   useEffect(() => {
-        fetchProjects();
+    fetchProjects();
     fetchUsers();
   }, []);
 
   useEffect(() => {
     if (isAddModalOpen) {
-          }
+    }
   }, [isAddModalOpen]);
 
   useEffect(() => {
     if (userSearchQuery.trim()) {
       const query = userSearchQuery.toLowerCase();
-      const filtered = allUsers.filter(u => 
-        u.fullName.toLowerCase().includes(query) || 
-        u.email.toLowerCase().includes(query) || 
-        (u.mobileNumber && u.mobileNumber.includes(query))
+      const filtered = allUsers.filter(u =>
+        u.fullName.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        (u.mobileNumber && u.mobileNumber.includes(query)) ||
+        (u.customUserId && u.customUserId.toLowerCase().includes(query))
       );
       setFilteredUsers(filtered);
     } else {
@@ -153,8 +157,8 @@ const SpecialProjects = () => {
     }
 
     // Frontend Duplication Check
-    const isDuplicate = allProjects.some(p => 
-      p.projectName.toLowerCase().trim() === projectName.toLowerCase().trim() && 
+    const isDuplicate = allProjects.some(p =>
+      p.projectName.toLowerCase().trim() === projectName.toLowerCase().trim() &&
       (!isEditMode || p.id !== editProjectId)
     );
 
@@ -173,10 +177,10 @@ const SpecialProjects = () => {
       const formData = new FormData();
       formData.append('projectName', projectName);
       formData.append('projectCategory', 'Special');
-            
+
       formData.append('targetAmount', targetAmount);
       formData.append('roi', roi);
-      
+
       formData.append('collectedAmount', projectData.collectedAmount || 0);
       if (selectedUser) {
         formData.append('assignedUserId', selectedUser.id);
@@ -185,10 +189,10 @@ const SpecialProjects = () => {
       if (preSettledProof && typeof preSettledProof !== 'string') {
         formData.append('paymentProof', preSettledProof);
       }
-      
-      
 
-      const response = isEditMode 
+
+
+      const response = isEditMode
         ? await editSpecialProjectApi(editProjectId, formData)
         : await addSpecialProjectApi(formData);
 
@@ -212,12 +216,13 @@ const SpecialProjects = () => {
       projectName: '',
       targetAmount: '',
       roi: '',
-      
-      collectedAmount: '' });
-                
+
+      collectedAmount: ''
+    });
+
     setIsEditMode(false);
     setEditProjectId(null);
-        setSelectedUser(null);
+    setSelectedUser(null);
     setUserSearchQuery('');
     setInvestmentMode('Pre-Settled');
     setPreSettledProof(null);
@@ -226,8 +231,8 @@ const SpecialProjects = () => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      
-      
+
+
       if (userSearchRef.current && !userSearchRef.current.contains(event.target)) {
         setIsUserSearchOpen(false);
       }
@@ -236,14 +241,27 @@ const SpecialProjects = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [activeTab, setActiveTab] = useState('ongoing');
+
   const title = 'Special Projects';
   const description = 'View and manage all special projects here.';
 
+  const tabs = [
+    { id: 'ongoing', label: 'Ongoing', icon: HiOutlineClock, count: allProjects.filter(p => p.status === 'ONGOING').length },
+    { id: 'completed', label: 'Completed', icon: HiOutlineCheckCircle, count: allProjects.filter(p => p.status === 'COMPLETED').length }
+  ];
+
+  // Filter projects based on activeTab
+  const filteredByTab = allProjects.filter(project => {
+    if (activeTab === 'completed') return project.status === 'COMPLETED';
+    return project.status === 'ONGOING';
+  });
+
   // Filter projects based on search
-  const searchedProjects = allProjects.filter(project => 
+  const searchedProjects = filteredByTab.filter(project =>
     project.projectName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const filteredProjects = searchedProjects.slice(indexOfFirst, indexOfLast);
@@ -251,7 +269,7 @@ const SpecialProjects = () => {
 
   const paginate = (n) => { if (n >= 1 && n <= totalPages) setCurrentPage(n); };
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, activeTab]);
 
   const handleViewDetails = (project) => {
     navigate(`/dashboard/special-projects/details/${project.id}`, { state: { project } });
@@ -279,10 +297,11 @@ const SpecialProjects = () => {
       projectName: project.projectName,
       targetAmount: project.targetAmount,
       roi: project.roi,
-      
-      collectedAmount: project.collectedAmount || 0 });
-    
-            
+
+      collectedAmount: project.collectedAmount || 0
+    });
+
+
     // Set selected user if project is exclusive
     if (project.assignedUserId) {
       const user = allUsers.find(u => String(u.id) === String(project.assignedUserId));
@@ -294,7 +313,7 @@ const SpecialProjects = () => {
       setSelectedUser(null);
       setUserSearchQuery('');
     }
-    
+
     setIsAddModalOpen(true);
   };
 
@@ -305,11 +324,11 @@ const SpecialProjects = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{title}</h1>
           <p className="text-gray-400 text-sm md:text-base">{description}</p>
         </div>
-        
+
         {/* Actions Area */}
-              
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-          
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+
           {/* Search */}
           <div className="relative">
             <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
@@ -339,7 +358,29 @@ const SpecialProjects = () => {
         </div>
       </div>
 
-
+      {/* Tabs: All / Ongoing / Completed */}
+      <div className="flex items-center gap-2 border-b border-white/5 pb-1 mb-8 overflow-x-auto custom-scrollbar">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`relative px-6 py-4 flex items-center gap-3 transition-all duration-300 group whitespace-nowrap ${activeTab === tab.id ? 'text-[#ccff00]' : 'text-gray-500 hover:text-white'
+              }`}
+          >
+            <tab.icon className={`text-lg ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{tab.label}</span>
+            {tab.count > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black ${activeTab === tab.id ? 'bg-[#ccff00] text-black' : 'bg-white/5 text-gray-500 group-hover:bg-white/10'
+                }`}>
+                {tab.count}
+              </span>
+            )}
+            {activeTab === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#ccff00] shadow-[0_0_15px_rgba(204,255,0,0.5)]" />
+            )}
+          </button>
+        ))}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-700">
         {isLoading ? (
@@ -350,11 +391,11 @@ const SpecialProjects = () => {
         ) : filteredProjects.length > 0 ? (
           filteredProjects.map((project, i) => (
             <div key={i} className="flex flex-col rounded-[1.25rem] bg-[#0c0c0c] border border-white/[0.05] overflow-hidden group hover:border-white/[0.1] transition-all duration-500 shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
-              
+
               {/* Content Body */}
               <div className="flex flex-col flex-1 p-6 lg:p-8">
                 <h3 className="text-xl font-bold text-white mb-8 truncate">{project.projectName}</h3>
-                
+
                 {/* Financials Grid */}
                 <div className="grid grid-cols-2 gap-y-6 mb-6 pt-2">
                   <div className="flex flex-col">
@@ -362,53 +403,54 @@ const SpecialProjects = () => {
                     <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Duration</span>
-                    <span className="text-lg font-medium text-white">{project.duration} Months</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Raised</span>
-                    <span className="text-xl font-bold text-white">₹{Number(project.collectedAmount || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Target</span>
-                    <span className="text-xl font-medium text-gray-400">₹{Number(project.targetAmount).toLocaleString('en-IN')}</span>
+                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Total Investment</span>
+                    <span className="text-xl font-bold text-white"><span className="mr-0.5">₹</span>{Number(project.collectedAmount || 0).toLocaleString('en-IN')}</span>
                   </div>
 
-                  {project.assignedUserId && (
-                    <div className="col-span-2 flex items-center justify-between pt-4 border-t border-white/5">
-                      <div className="flex flex-col">
-                        <span className="text-[0.6rem] text-[#ccff00] font-bold uppercase tracking-[0.2em] mb-1.5">Assigned User</span>
-                        <span className="text-sm font-bold text-white">
-                          {allUsers.find(u => String(u.id) === String(project.assignedUserId))?.fullName || 'N/A'}
-                        </span>
-                        <span className="text-[10px] text-gray-500 font-medium truncate mt-0.5">
-                          {allUsers.find(u => String(u.id) === String(project.assignedUserId))?.email || 'N/A'}
-                        </span>
-                      </div>
-                      <HiOutlineInformationCircle 
-                        onClick={async () => {
-                          const user = allUsers.find(u => String(u.id) === String(project.assignedUserId));
-                          if (user) {
-                            setSelectedUserForModal(user);
-                            setSelectedUserFinancials(null); // Reset
-                            setIsUserModalOpen(true);
-                            try {
-                               const res = await getUserFinancialDetailsApi(user.id);
-                               if(res.status === 200) {
+                  {project.assignedUserId && (() => {
+                    const assignedUser = allUsers.find(u => String(u.id) === String(project.assignedUserId));
+                    return (
+                      <div className="col-span-2 flex items-center justify-between pt-4 border-t border-white/5">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[0.6rem] text-[#ccff00] font-bold uppercase tracking-[0.2em]">Assigned User</span>
+                            {assignedUser && (
+                              <span className="px-1.5 py-0.5 rounded text-[0.65rem] font-mono font-semibold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider">
+                                {assignedUser.customUserId || `MHI2026${String(assignedUser.id).padStart(2, '0')}`}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm font-bold text-white">
+                            {assignedUser?.fullName || 'N/A'}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-medium truncate mt-0.5">
+                            {assignedUser?.email || 'N/A'}
+                          </span>
+                        </div>
+                        <HiOutlineInformationCircle
+                          onClick={async () => {
+                            if (assignedUser) {
+                              setSelectedUserForModal(assignedUser);
+                              setSelectedUserFinancials(null);
+                              setIsUserModalOpen(true);
+                              try {
+                                const res = await getUserFinancialDetailsApi(assignedUser.id);
+                                if (res.status === 200) {
                                   setSelectedUserFinancials(res.data);
-                               }
-                            } catch(err) { console.error(err); }
-                          }
-                        }}
-                        className="text-gray-500 text-2xl shrink-0 ml-4 cursor-pointer hover:text-[#ccff00] transition-colors" 
-                      />
-                    </div>
-                  )}
+                                }
+                              } catch (err) { console.error(err); }
+                            }
+                          }}
+                          className="text-gray-500 text-2xl shrink-0 ml-4 cursor-pointer hover:text-[#ccff00] transition-colors"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Progress Bar Container */}
                 <div className="w-full h-[6px] bg-[#ccff00]/10 rounded-full mb-3 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-[#ccff00] rounded-full relative shadow-[0_0_10px_rgba(204,255,0,0.5)]"
                     style={{ width: `${(Number(project.collectedAmount || 0) / Number(project.targetAmount || 1)) * 100}%` }}
                   />
@@ -423,14 +465,14 @@ const SpecialProjects = () => {
 
                 {/* Action Buttons */}
                 <div className="mt-auto flex gap-3">
-                  <button 
+                  <button
                     onClick={() => handleViewDetails(project)}
                     className="flex-1 py-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] transition-all duration-300 flex items-center justify-center gap-2.5 group/btn"
                   >
                     <HiOutlineEye className="text-gray-400 group-hover/btn:text-[#ccff00] transition-colors text-lg" />
                     <span className="text-[0.7rem] font-bold text-white uppercase tracking-[0.2em]">View</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDeleteProject(project.id)}
                     className="px-4 py-3.5 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 transition-all duration-300 flex items-center justify-center group/delete"
                     title="Delete Project"
@@ -445,7 +487,9 @@ const SpecialProjects = () => {
         ) : (
           <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
             <HiOutlineFolder className="text-4xl text-gray-700" />
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No Special Projects Found</p>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
+              {activeTab === 'completed' ? 'No Completed Special Projects Found' : 'No Ongoing Special Projects Found'}
+            </p>
           </div>
         )}
       </div>
@@ -456,23 +500,21 @@ const SpecialProjects = () => {
           <button
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
-              currentPage === 1 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${currentPage === 1 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
           >
             Previous
           </button>
-          
+
           <div className="flex gap-1 hidden sm:flex">
             {[...Array(totalPages)].map((_, i) => (
               <button
                 key={i + 1}
                 onClick={() => paginate(i + 1)}
-                className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
-                  currentPage === i + 1
-                    ? 'bg-[#ccff00] text-black shadow-[0_0_15px_rgba(204,255,0,0.2)]'
-                    : 'text-gray-500 hover:text-white hover:bg-white/5'
-                }`}
+                className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${currentPage === i + 1
+                  ? 'bg-[#ccff00] text-black shadow-[0_0_15px_rgba(204,255,0,0.2)]'
+                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+                  }`}
               >
                 {i + 1}
               </button>
@@ -482,9 +524,8 @@ const SpecialProjects = () => {
           <button
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
-              currentPage === totalPages ? 'text-gray-700 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${currentPage === totalPages ? 'text-gray-700 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
           >
             Next
           </button>
@@ -495,14 +536,14 @@ const SpecialProjects = () => {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto">
           <div className="my-auto w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-full">
-            
+
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/5">
               <div>
                 <h2 className="text-xl font-bold text-white uppercase">{isEditMode ? 'Update Project Details' : 'Initiate New Project'}</h2>
                 <p className="text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">{isEditMode ? 'Refine the project parameters below' : 'Enter Comprehensive Details Below'}</p>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setIsAddModalOpen(false);
                   resetForm();
@@ -518,12 +559,12 @@ const SpecialProjects = () => {
               {/* Project Name */}
               <div className="flex flex-col gap-2">
                 <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Project Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="projectName"
                   value={projectData.projectName}
                   onChange={handleInputChange}
-                  placeholder="e.g. Rural Education Empowerment" 
+                  placeholder="e.g. Rural Education Empowerment"
                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all placeholder:text-gray-600"
                 />
               </div>
@@ -533,80 +574,90 @@ const SpecialProjects = () => {
               {/* Target User */}
               <div className="flex flex-col gap-2 relative">
                 <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Target User Association</label>
-                  
-                  {selectedUser ? (
-                    <div className="flex items-center justify-between p-4 bg-[#ccff00]/5 border border-[#ccff00]/20 rounded-xl group/selected transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black font-black text-xs uppercase">
-                          {(selectedUser.fullName[0] || 'U')}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">{selectedUser.fullName}</span>
-                          <span className="text-[0.7rem] font-medium text-gray-500">{selectedUser.email}</span>
-                        </div>
-                      </div>
-                      {!isEditMode && (
-                        <button 
-                          onClick={() => {
-                            setSelectedUser(null);
-                            setUserSearchQuery('');
-                          }}
-                          className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
-                          title="Change User"
-                        >
-                          <HiX className="text-lg" />
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          value={userSearchQuery}
-                          onChange={(e) => setUserSearchQuery(e.target.value)}
-                          onFocus={() => setIsUserSearchOpen(true)}
-                          placeholder="Search by Name, Email or Phone..." 
-                          className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] transition-all placeholder:text-gray-600"
-                        />
-                      </div>
 
-                      {isUserSearchOpen && userSearchQuery.trim() && (
-                        <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#0c0c0c] border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
-                          <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-1.5">
-                            {filteredUsers.length > 0 ? (
-                              filteredUsers.map((user) => (
-                                <button
-                                  key={user.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedUser(user);
-                                    setIsUserSearchOpen(false);
-                                    setUserSearchQuery(user.email);
-                                  }}
-                                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all group/item text-left mb-1 last:mb-0"
-                                >
-                                  <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 font-bold text-xs uppercase group-hover/item:bg-[#ccff00] group-hover/item:text-black transition-all">
-                                    {(user.fullName[0] || 'U')}
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[13px] font-bold text-white group-hover/item:text-[#ccff00] transition-colors">{user.fullName}</span>
-                                    <span className="text-[10px] font-medium text-gray-500">{user.email}</span>
-                                  </div>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-4 py-8 text-center">
-                                <p className="text-[0.65rem] font-bold text-gray-600 uppercase tracking-widest">No User Found</p>
-                              </div>
-                            )}
-                          </div>
+                {selectedUser ? (
+                  <div className="flex items-center justify-between p-4 bg-[#ccff00]/5 border border-[#ccff00]/20 rounded-xl group/selected transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black font-black text-xs uppercase">
+                        {(selectedUser.fullName[0] || 'U')}
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-white">{selectedUser.fullName}</span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                            {selectedUser.customUserId || `MHI2026${String(selectedUser.id).padStart(2, '0')}`}
+                          </span>
                         </div>
-                      )}
+                        <span className="text-[0.7rem] font-medium text-gray-500">{selectedUser.email}</span>
+                      </div>
                     </div>
-                  )}
-                  <p className="text-[0.6rem] text-zinc-600 font-medium italic">* This project will be visible exclusively to the selected user in their dashboard.</p>
-                </div>
+                    {!isEditMode && (
+                      <button
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setUserSearchQuery('');
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                        title="Change User"
+                      >
+                        <HiX className="text-lg" />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        onFocus={() => setIsUserSearchOpen(true)}
+                        placeholder="Search by Name, Email or Phone..."
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] transition-all placeholder:text-gray-600"
+                      />
+                    </div>
+
+                    {isUserSearchOpen && userSearchQuery.trim() && (
+                      <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#0c0c0c] border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="max-h-[220px] overflow-y-auto custom-scrollbar p-1.5">
+                          {filteredUsers.length > 0 ? (
+                            filteredUsers.map((user) => (
+                              <button
+                                key={user.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsUserSearchOpen(false);
+                                  setUserSearchQuery(user.email);
+                                }}
+                                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all group/item text-left mb-1 last:mb-0"
+                              >
+                                <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 font-bold text-xs uppercase group-hover/item:bg-[#ccff00] group-hover/item:text-black transition-all">
+                                  {(user.fullName[0] || 'U')}
+                                </div>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[13px] font-bold text-white group-hover/item:text-[#ccff00] transition-colors">{user.fullName}</span>
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                                      {user.customUserId || `MHI2026${String(user.id).padStart(2, '0')}`}
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] font-medium text-gray-500">{user.email}</span>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center">
+                              <p className="text-[0.65rem] font-bold text-gray-600 uppercase tracking-widest">No User Found</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-[0.6rem] text-zinc-600 font-medium italic">* This project will be visible exclusively to the selected user in their dashboard.</p>
+              </div>
 
               {/* Payment Proof / Project Image */}
               <div className="flex flex-col gap-3">
@@ -614,9 +665,9 @@ const SpecialProjects = () => {
                 <div className="flex items-center gap-4">
                   {preSettledProof ? (
                     <div className="relative w-32 h-32 rounded-xl border border-white/10 overflow-hidden shrink-0">
-                      <img 
-                        src={typeof preSettledProof === 'string' ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${preSettledProof}` : URL.createObjectURL(preSettledProof)} 
-                        alt="Proof Preview" 
+                      <img
+                        src={typeof preSettledProof === 'string' ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${preSettledProof}` : URL.createObjectURL(preSettledProof)}
+                        alt="Proof Preview"
                         className="w-full h-full object-cover"
                       />
                       <button
@@ -658,46 +709,53 @@ const SpecialProjects = () => {
               </div>
 
               {/* Financials & Timeline Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
                 {/* Target Amount */}
                 <div className="flex flex-col gap-2">
                   <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Target Amount (₹)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     name="targetAmount"
                     min="0"
                     value={projectData.targetAmount}
                     onChange={handleInputChange}
-                    placeholder="e.g. 500000" 
+                    placeholder="e.g. 500000"
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all placeholder:text-gray-600"
                   />
                 </div>
 
 
 
-                {/* Est. ROI */}
+                {/* Monthly ROI */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Est. ROI (%)</label>
-                  <input 
-                    type="number" 
+                  <div className="flex items-center justify-between">
+                    <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Monthly ROI (%)</label>
+                    {projectData.roi && !isNaN(parseFloat(projectData.roi)) && parseFloat(projectData.roi) > 0 && (
+                      <span className="text-[0.65rem] font-mono font-bold text-[#ccff00] bg-[#ccff00]/10 px-2 py-0.5 rounded border border-[#ccff00]/20 tracking-wider">
+                        ≈ {(parseFloat(projectData.roi) * 12).toFixed(2).replace(/\.00$/, '')}% / YR
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    step="any"
                     name="roi"
                     min="0"
                     value={projectData.roi}
                     onChange={handleInputChange}
-                    placeholder="e.g. 14.5" 
+                    placeholder="e.g. 1.5"
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all placeholder:text-gray-600"
                   />
-                </div>
 
-                
+                </div>
 
               </div>
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between p-6 border-t border-white/5 bg-black/20 rounded-b-2xl">
-              <button 
+              <button
                 onClick={() => {
                   setIsAddModalOpen(false);
                   resetForm();
@@ -706,7 +764,7 @@ const SpecialProjects = () => {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handlePublishProject}
                 disabled={isSubmittingProject || !projectData.projectName || !projectData.targetAmount || !projectData.roi || !selectedUser}
                 className="px-6 py-3 rounded-xl bg-[#ccff00] hover:bg-[#b3ff00] text-black font-black text-sm tracking-[0.15em] uppercase shadow-[0_0_15px_rgba(204,255,0,0.2)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -722,90 +780,95 @@ const SpecialProjects = () => {
       {/* User Information Modal */}
       {isUserModalOpen && selectedUserForModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-xs animate-in fade-in duration-300">
-           <div className="relative w-full max-w-lg bg-[#0c0c0c] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-              
-              {/* Header */}
-              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#ccff00] flex items-center justify-center text-black font-black text-lg">
-                       {selectedUserForModal.fullName[0].toUpperCase()}
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
-                       <p className="text-[#ccff00] text-[10px] font-black uppercase tracking-widest mt-0.5">Investor Protocol Profile</p>
-                    </div>
-                 </div>
-                 <button 
-                   onClick={() => setIsUserModalOpen(false)}
-                   className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all"
-                 >
-                    <HiX className="text-xl" />
-                 </button>
+          <div className="relative w-full max-w-lg bg-[#0c0c0c] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
+
+            {/* Header */}
+            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#ccff00] flex items-center justify-center text-black font-black text-lg">
+                  {selectedUserForModal.fullName[0].toUpperCase()}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                    <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                      {selectedUserForModal.customUserId || `MHI2026${String(selectedUserForModal.id).padStart(2, '0')}`}
+                    </span>
+                  </div>
+                  <p className="text-[#ccff00] text-[10px] font-black uppercase tracking-widest mt-0.5">Investor Protocol Profile</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsUserModalOpen(false)}
+                className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all"
+              >
+                <HiX className="text-xl" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 space-y-6">
+
+              {/* Contact Details */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Email Address</span>
+                  <span className="text-sm font-medium text-white break-all">{selectedUserForModal.email}</span>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Mobile Number</span>
+                  <span className="text-sm font-medium text-white">{selectedUserForModal.mobileNumber || '+91 98765 43210'}</span>
+                </div>
               </div>
 
-              {/* Body */}
-              <div className="p-8 space-y-6">
-                 
-                 {/* Contact Details */}
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="flex flex-col gap-1.5">
-                       <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Email Address</span>
-                       <span className="text-sm font-medium text-white break-all">{selectedUserForModal.email}</span>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                       <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Mobile Number</span>
-                       <span className="text-sm font-medium text-white">{selectedUserForModal.mobileNumber || '+91 98765 43210'}</span>
-                    </div>
-                 </div>
-
-                 {/* Dummy PAN Card Section */}
-                 <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-white/5 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                       <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-                    </div>
-                    <div className="relative z-10">
-                       <span className="text-[9px] font-black text-[#ccff00] uppercase tracking-[0.3em] mb-4 block">Taxation ID (PAN)</span>
-                       <div className="flex flex-col gap-1">
-                          <p className="text-lg font-black text-white tracking-[0.3em] uppercase">{selectedUserFinancials?.pan?.panNumber || 'NOT AVAILABLE'}</p>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Permanent Account Number</p>
-                       </div>
-                    </div>
-                 </div>
-
-                 {/* Dummy Bank Details */}
-                 <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
-                    <div className="flex items-center gap-2 text-gray-400">
-                       <HiOutlineTag className="text-[#ccff00]" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Institutional Settlement Details</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-y-4">
-                       <div>
-                          <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1">Bank Name</p>
-                          <p className="text-xs font-bold text-white">{selectedUserFinancials?.bank?.bankName || 'NOT AVAILABLE'}</p>
-                       </div>
-                       <div>
-                          <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1">IFSC Code</p>
-                          <p className="text-xs font-bold text-white tracking-widest">{selectedUserFinancials?.bank?.ifsc || 'NOT AVAILABLE'}</p>
-                       </div>
-                       <div className="col-span-2 pt-4 border-t border-white/5">
-                          <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1">Account Number</p>
-                          <p className="text-sm font-black text-white tracking-[0.2em]">{selectedUserFinancials?.bank?.accountNumber || 'NOT AVAILABLE'}</p>
-                       </div>
-                    </div>
-                 </div>
+              {/* Dummy PAN Card Section */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-white/5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" /></svg>
+                </div>
+                <div className="relative z-10">
+                  <span className="text-[9px] font-black text-[#ccff00] uppercase tracking-[0.3em] mb-4 block">Taxation ID (PAN)</span>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-lg font-black text-white tracking-[0.3em] uppercase">{selectedUserFinancials?.pan?.panNumber || 'NOT AVAILABLE'}</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Permanent Account Number</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Footer */}
-              <div className="p-8 border-t border-white/5 bg-black flex justify-center">
-                 <button 
-                   onClick={() => setIsUserModalOpen(false)}
-                   className="px-10 py-3 rounded-xl bg-white text-black font-black text-[10px] uppercase tracking-[0.3em] hover:bg-gray-200 transition-all active:scale-[0.98]"
-                 >
-                    Close Profile
-                 </button>
+              {/* Dummy Bank Details */}
+              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <HiOutlineTag className="text-[#ccff00]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Institutional Settlement Details</span>
+                </div>
+                <div className="grid grid-cols-2 gap-y-4">
+                  <div>
+                    <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1">Bank Name</p>
+                    <p className="text-xs font-bold text-white">{selectedUserFinancials?.bank?.bankName || 'NOT AVAILABLE'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1">IFSC Code</p>
+                    <p className="text-xs font-bold text-white tracking-widest">{selectedUserFinancials?.bank?.ifsc || 'NOT AVAILABLE'}</p>
+                  </div>
+                  <div className="col-span-2 pt-4 border-t border-white/5">
+                    <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1">Account Number</p>
+                    <p className="text-sm font-black text-white tracking-[0.2em]">{selectedUserFinancials?.bank?.accountNumber || 'NOT AVAILABLE'}</p>
+                  </div>
+                </div>
               </div>
+            </div>
 
-           </div>
+            {/* Footer */}
+            <div className="p-8 border-t border-white/5 bg-black flex justify-center">
+              <button
+                onClick={() => setIsUserModalOpen(false)}
+                className="px-10 py-3 rounded-xl bg-white text-black font-black text-[10px] uppercase tracking-[0.3em] hover:bg-gray-200 transition-all active:scale-[0.98]"
+              >
+                Close Profile
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
     </div>

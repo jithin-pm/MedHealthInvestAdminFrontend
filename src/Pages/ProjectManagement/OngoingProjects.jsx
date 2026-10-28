@@ -11,7 +11,8 @@ import {
   HiOutlinePlay,
   HiOutlineRefresh,
   HiOutlineTrash,
-  HiOutlineInformationCircle
+  HiOutlineInformationCircle,
+  HiOutlineClock
 } from 'react-icons/hi';
 import { 
   addCategoryApi, 
@@ -24,6 +25,7 @@ import {
 } from '../../services/allApi';
 import { showAlert } from '../../Utils/alert';
 import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
+import { getProjectDaysLeft } from '../../Utils/projectDaysLeft';
 import { BASE_URL } from '../../services/baseUrl';
 
 const getImageUrl = (img) => {
@@ -238,7 +240,8 @@ const OngoingProjects = () => {
 
   const filteredProjects = allProjects.filter(p => 
     p.projectType === 'Standard' &&
-    p.status === 'ONGOING'
+    p.status === 'ONGOING' &&
+    (!p.completionDate || new Date(p.completionDate) > new Date())
   );
 
   const handleViewDetails = (project) => {
@@ -346,37 +349,55 @@ const OngoingProjects = () => {
                   </div>
 
                   <div className="flex flex-col">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Raised</span>
-                    <span className="text-xl font-bold text-white">₹{Number(project.collectedAmount || 0).toLocaleString('en-IN')}</span>
+                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">
+                      {project.projectType === 'Exclusive' ? 'Capital Invested' : 'Raised'}
+                    </span>
+                    <span className="text-xl font-bold text-white"><span className="mr-0.5">₹</span>{Number(project.collectedAmount || project.targetAmount || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Target</span>
-                    <span className="text-xl font-medium text-gray-400">₹{Number(project.targetAmount).toLocaleString('en-IN')}</span>
+                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">
+                      {project.projectType === 'Exclusive' ? 'Capital + Interest' : 'Target'}
+                    </span>
+                    {project.projectType === 'Exclusive' ? (
+                      <span className="text-xl font-black text-[#ccff00]">
+                        <span className="mr-0.5">₹</span>{(Number(project.collectedAmount || project.targetAmount || 0) + Math.round((Number(project.collectedAmount || project.targetAmount || 0) * Number(project.roi || 0) * Number(project.duration || 1)) / 100)).toLocaleString('en-IN')}
+                      </span>
+                    ) : (
+                      <span className="text-xl font-medium text-gray-400"><span className="mr-0.5">₹</span>{Number(project.targetAmount).toLocaleString('en-IN')}</span>
+                    )}
                   </div>
 
-                  {project.projectType === 'Exclusive' && (
+                  {project.projectType === 'Exclusive' && (() => {
+                    const assignedInvestor = allUsers.find(u => u.id === project.exclusiveUserId);
+                    return (
                     <div className="col-span-2 flex items-center justify-between pt-4 border-t border-white/5">
                       <div className="flex flex-col">
-                        <span className="text-[0.6rem] text-[#ccff00] font-bold uppercase tracking-[0.2em] mb-1.5">Assigned User</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-[0.6rem] text-[#ccff00] font-bold uppercase tracking-[0.2em]">Assigned User</span>
+                          {assignedInvestor && (
+                            <span className="px-1.5 py-0.5 rounded text-[0.65rem] font-mono font-semibold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider">
+                              {assignedInvestor.customUserId || `MHI2026${String(assignedInvestor.id).padStart(2, '0')}`}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-sm font-bold text-white">
-                          {allUsers.find(u => u.id === project.exclusiveUserId)?.fullName || 'N/A'}
+                          {assignedInvestor?.fullName || 'N/A'}
                         </span>
                         <span className="text-[10px] text-gray-500 font-medium truncate mt-0.5">
-                          {allUsers.find(u => u.id === project.exclusiveUserId)?.email || 'N/A'}
+                          {assignedInvestor?.email || 'N/A'}
                         </span>
                       </div>
                       <HiOutlineInformationCircle 
                         onClick={() => {
-                          const user = allUsers.find(u => u.id === project.exclusiveUserId);
-                          if (user) {
-                            setSelectedUserForModal(user);
+                          if (assignedInvestor) {
+                            setSelectedUserForModal(assignedInvestor);
                             setIsUserModalOpen(true);
                           }
                         }}
                         className="text-gray-500 text-2xl shrink-0 ml-4 cursor-pointer hover:text-[#ccff00] transition-colors" 
                       />
                     </div>
-                  )}
+                  ); })()}
                 </div>
 
                 {/* Progress Bar Container */}
@@ -392,6 +413,18 @@ const OngoingProjects = () => {
                   <span className="text-[0.65rem] text-[#ccff00] font-bold tracking-[0.15em] uppercase">
                     {Math.round((Number(project.collectedAmount || 0) / Number(project.targetAmount || 1)) * 100)}% Funded
                   </span>
+                  {(() => {
+                    const daysInfo = getProjectDaysLeft(project);
+                    if (!daysInfo) return null;
+                    return (
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm">
+                        <HiOutlineClock className={`text-xs ${daysInfo.days > 0 ? 'text-[#ccff00] animate-pulse' : 'text-gray-400'}`} />
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-gray-300">
+                          {daysInfo.text}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="mt-auto flex gap-3">
@@ -445,8 +478,24 @@ const OngoingProjects = () => {
                    <input type="number" name="targetAmount" min="0" value={projectData.targetAmount} onChange={handleInputChange} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#ccff00] outline-none" />
                  </div>
                  <div className="flex flex-col gap-2">
-                   <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">ROI (%)</label>
-                   <input type="number" name="roi" min="0" value={projectData.roi} onChange={handleInputChange} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#ccff00] outline-none" />
+                   
+                   <div className="flex items-center justify-between">
+                      <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Monthly ROI (%)</label>
+                      {projectData.roi && !isNaN(parseFloat(projectData.roi)) && parseFloat(projectData.roi) > 0 && (
+                        <span className="text-[10px] font-mono font-bold text-[#ccff00]">
+                          {(parseFloat(projectData.roi) * 12).toFixed(2).replace(/\.00$/, '')}% / yr
+                        </span>
+                      )}
+                    </div>
+                    <input type="number" step="any" name="roi" min="0" value={projectData.roi} onChange={handleInputChange} placeholder="e.g. 1.5" className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#ccff00] outline-none" />
+                    {projectData.roi && !isNaN(parseFloat(projectData.roi)) && parseFloat(projectData.roi) > 0 && (
+                      <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-white/[0.02] border border-white/5 text-[10px]">
+                        <span className="text-gray-400">Yearly ROI:</span>
+                        <span className="text-[#ccff00] font-mono font-bold">
+                          {(parseFloat(projectData.roi) * 12).toFixed(2).replace(/\.00$/, '')}%
+                        </span>
+                      </div>
+                    )}
                  </div>
                  <div className="flex flex-col gap-2">
                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Duration (M)</label>
@@ -479,7 +528,12 @@ const OngoingProjects = () => {
                        {selectedUserForModal.fullName[0].toUpperCase()}
                     </div>
                     <div>
-                       <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                       <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                          <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                            {selectedUserForModal.customUserId || `MHI2026${String(selectedUserForModal.id).padStart(2, '0')}`}
+                          </span>
+                       </div>
                        <p className="text-[#ccff00] text-[10px] font-black uppercase tracking-widest mt-0.5">Investor Protocol Profile</p>
                     </div>
                  </div>

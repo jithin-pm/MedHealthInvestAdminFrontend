@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { HiOutlineHome, HiOutlineUsers, HiOutlineFolder, HiOutlineChatAlt2, HiOutlineLogout, HiOutlineMenuAlt2, HiX, HiOutlineChat, HiOutlineCurrencyDollar, HiOutlineChevronDown, HiOutlineStar } from 'react-icons/hi';
+import { HiOutlineHome, HiOutlineUsers, HiOutlineFolder, HiOutlineChatAlt2, HiOutlineLogout, HiOutlineMenuAlt2, HiX, HiOutlineChat, HiOutlineCurrencyDollar, HiOutlineChevronDown, HiOutlineStar, HiOutlineBell } from 'react-icons/hi';
 import { LuCrown } from 'react-icons/lu';
 import Logo from '../../Components/Common/Logo';
+import { getEnquiriesByTypeApi, getAllProjectsApi } from '../../services/allApi';
 
-const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
+const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick, badge }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const isActiveParent = location.pathname.startsWith(to) && to !== '/dashboard';
+  const isActiveParent = (
+    (location.pathname.startsWith(to) && to !== '/dashboard') ||
+    (subLinks && subLinks.some(sub => location.pathname.startsWith(sub.to)))
+  );
 
   React.useEffect(() => {
-    if (isActiveParent) setIsOpen(true);
+    if (isActiveParent) {
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
   }, [isActiveParent]);
 
   if (subLinks) {
@@ -26,10 +34,19 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
           }`}
         >
           <div className="flex items-center gap-3">
-            <Icon className="text-xl" />
+            <div className="relative flex items-center justify-center shrink-0">
+              <Icon className="text-xl" />
+              {badge > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-[#ccff00] text-black text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-[#0c0c0c] leading-none animate-in zoom-in-50 duration-200">
+                  {badge > 99 ? '99+' : badge}
+                </span>
+              )}
+            </div>
             <span>{label}</span>
           </div>
-          <HiOutlineChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+          <div className="flex items-center gap-2">
+            <HiOutlineChevronDown className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+          </div>
         </button>
         {isOpen && (
           <div className="pl-11 space-y-1 mt-1 animate-in slide-in-from-top-2 duration-300 fade-in">
@@ -40,14 +57,21 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
                   key={sub.to}
                   to={sub.to}
                   onClick={onClick}
-                  className={`block px-3 py-1.5 rounded-lg transition-all duration-300 text-[0.8rem] relative ${
+                  className={`flex items-center justify-between px-3 py-1.5 rounded-lg transition-all duration-300 text-[0.8rem] relative ${
                     isSubActive
                       ? 'text-[#ccff00] bg-[#ccff00]/5 font-bold shadow-sm pl-4'
                       : 'text-gray-500 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {isSubActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#ccff00] rounded-full shadow-[0_0_10px_rgba(204,255,0,0.5)]" />}
-                  {sub.label}
+                  <div className="flex items-center gap-2 truncate">
+                    {isSubActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#ccff00] rounded-full" />}
+                    <span className="truncate">{sub.label}</span>
+                  </div>
+                  {sub.badge > 0 && (
+                    <span className="ml-2 bg-[#ccff00] text-black text-[9px] font-black rounded-full min-w-[16px] h-4 px-1.5 flex items-center justify-center shrink-0 leading-none">
+                      {sub.badge > 99 ? '99+' : sub.badge}
+                    </span>
+                  )}
                 </NavLink>
               );
             })}
@@ -63,7 +87,7 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
       onClick={onClick}
       end={to === '/dashboard' || to === '/dashboard/enquiries'}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 font-bold text-[0.85rem] relative ${
+        `flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-300 font-bold text-[0.85rem] relative ${
           isActive
             ? 'text-[#ccff00] bg-[#ccff00]/5 shadow-sm pl-4'
             : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -72,9 +96,23 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
     >
       {({ isActive }) => (
         <>
-          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#ccff00] rounded-full shadow-[0_0_10px_rgba(204,255,0,0.5)]" />}
-          <Icon className="text-xl" />
-          <span>{label}</span>
+          <div className="flex items-center gap-3">
+            {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#ccff00] rounded-full" />}
+            <div className="relative flex items-center justify-center shrink-0">
+              <Icon className="text-xl" />
+              {badge > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-[#ccff00] text-black text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-[#0c0c0c] leading-none animate-in zoom-in-50 duration-200">
+                  {badge > 99 ? '99+' : badge}
+                </span>
+              )}
+            </div>
+            <span>{label}</span>
+          </div>
+          {badge > 0 && (
+            <span className="bg-[#ccff00] text-black text-[9px] font-black rounded-full min-w-[16px] h-4 px-1.5 flex items-center justify-center leading-none">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
         </>
       )}
     </NavLink>
@@ -83,7 +121,84 @@ const SidebarLink = ({ to, icon: Icon, label, subLinks, onClick }) => {
 
 const DashboardLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [specialUnreadCount, setSpecialUnreadCount] = useState(0);
+  const [exclusiveUnreadCount, setExclusiveUnreadCount] = useState(0);
+  const [reminderCount, setReminderCount] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const fetchUnreadCounts = async () => {
+    try {
+      const [specialRes, exclusiveRes, projectsRes] = await Promise.all([
+        getEnquiriesByTypeApi('Special'),
+        getEnquiriesByTypeApi('Exclusive'),
+        getAllProjectsApi().catch(() => null)
+      ]);
+
+      if (specialRes && specialRes.status === 200 && Array.isArray(specialRes.data)) {
+        const count = specialRes.data.filter(enq => enq.status?.toLowerCase() === 'unread').length;
+        setSpecialUnreadCount(count);
+      }
+
+      if (exclusiveRes && exclusiveRes.status === 200 && Array.isArray(exclusiveRes.data)) {
+        const count = exclusiveRes.data.filter(enq => enq.status?.toLowerCase() === 'unread').length;
+        setExclusiveUnreadCount(count);
+      }
+
+      if (projectsRes?.status === 200 && Array.isArray(projectsRes.data?.projects)) {
+        const now = new Date();
+        let remCount = 0;
+        projectsRes.data.projects.forEach(p => {
+          if (p.status === 'ONGOING') {
+            let maturityDate = null;
+            if (p.completionDate) maturityDate = new Date(p.completionDate);
+            else if (p.ongoingStartDate && p.duration) maturityDate = new Date(new Date(p.ongoingStartDate).getTime() + (parseInt(p.duration) * 30 * 24 * 60 * 60 * 1000));
+            else if (p.duration && (p.created_at || p.createdAt)) maturityDate = new Date(new Date(p.created_at || p.createdAt).getTime() + (parseInt(p.duration) * 30 * 24 * 60 * 60 * 1000));
+
+            if (maturityDate && !isNaN(maturityDate.getTime())) {
+              const diffDays = Math.ceil((maturityDate - now) / (1000 * 60 * 60 * 24));
+              if (diffDays <= 30) remCount++;
+            }
+          } else if (p.status === 'ACTIVE') {
+            const target = Number(p.targetAmount || 0);
+            const collected = Number(p.collectedAmount || 0);
+            if (collected < target && p.activeDeadline) {
+              const deadlineDate = new Date(p.activeDeadline);
+              if (!isNaN(deadlineDate.getTime())) {
+                const diffDays = Math.ceil((deadlineDate - now) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 30) remCount++;
+              }
+            }
+          } else if (p.status === 'EXPIRED' && !p.isSettled) {
+            remCount++;
+          }
+        });
+        setReminderCount(remCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread counts / reminders:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchUnreadCounts();
+
+    const handleUpdate = () => {
+      fetchUnreadCounts();
+    };
+    window.addEventListener('enquiriesUpdated', handleUpdate);
+
+    const interval = setInterval(fetchUnreadCounts, 15000);
+
+    return () => {
+      window.removeEventListener('enquiriesUpdated', handleUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    fetchUnreadCounts();
+  }, [location.pathname]);
 
   const handleLogout = () => {
     Swal.fire({
@@ -114,7 +229,7 @@ const DashboardLayout = () => {
     { to: '/dashboard/users', label: 'User Management', icon: HiOutlineUsers },
     { 
       to: '/dashboard/projects', 
-      label: 'Project Management', 
+      label: 'Standard Projects', 
       icon: HiOutlineFolder,
       subLinks: [
         { to: '/dashboard/projects/active', label: 'Active Projects' },
@@ -127,19 +242,27 @@ const DashboardLayout = () => {
       to: '/dashboard/exclusive-projects', 
       label: 'Exclusive Projects', 
       icon: LuCrown,
+      badge: exclusiveUnreadCount,
       subLinks: [
         { to: '/dashboard/exclusive-projects', label: 'Exclusive Project Management' },
-        { to: '/dashboard/enquiries/exclusive', label: 'Exclusive Enquiries' }
+        { to: '/dashboard/enquiries/exclusive', label: 'Exclusive Enquiries', badge: exclusiveUnreadCount }
       ]
     },
     { 
       to: '/dashboard/special-projects', 
       label: 'Special Projects', 
       icon: HiOutlineStar,
+      badge: specialUnreadCount,
       subLinks: [
         { to: '/dashboard/special-projects', label: 'Special Project Management' },
-        { to: '/dashboard/enquiries/special', label: 'Special Projects Enquiries' }
+        { to: '/dashboard/enquiries/special', label: 'Special Projects Enquiries', badge: specialUnreadCount }
       ]
+    },
+    { 
+      to: '/dashboard/project-reminders', 
+      label: 'Project Reminders', 
+      icon: HiOutlineBell,
+      badge: reminderCount > 0 ? reminderCount : null
     },
     { to: '/dashboard/transactions', label: 'Recent Transactions', icon: HiOutlineCurrencyDollar },
     { to: '/dashboard/enquiries', label: 'Enquiries', icon: HiOutlineChatAlt2 },

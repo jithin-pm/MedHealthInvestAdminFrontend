@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   HiOutlineChevronLeft,
   HiOutlineStar,
@@ -23,8 +23,16 @@ import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
 const SettlementManagement = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [project, setProject] = React.useState(null);
+
+  // Auto-redirect to exclusive-projects route if viewing an exclusive project settlement under projects route
+  React.useEffect(() => {
+    if (project?.projectType === 'Exclusive' && location.pathname.startsWith('/dashboard/projects/settlement/')) {
+      navigate(`/dashboard/exclusive-projects/settlement/${project.id || id}`, { replace: true });
+    }
+  }, [project, location.pathname, id, navigate]);
   const [investors, setInvestors] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [isLoadingInvestors, setIsLoadingInvestors] = React.useState(false);
@@ -247,7 +255,13 @@ const SettlementManagement = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-5">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                if (project?.projectType === 'Exclusive') {
+                  navigate(`/dashboard/exclusive-projects/details/${id}`);
+                } else {
+                  navigate(-1);
+                }
+              }}
               className="flex items-center gap-2 text-gray-500 hover:text-white transition-all group"
             >
               <HiOutlineChevronLeft className="text-lg group-hover:-translate-x-1 transition-transform" />
@@ -331,6 +345,11 @@ const SettlementManagement = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-base font-bold text-white tracking-tight">{inv.investor?.fullName || 'Anonymous'}</p>
+                              {(inv.investor?.customUserId || inv.investor?.id) && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                                  {inv.investor?.customUserId || `MHI2026${String(inv.investor?.id).padStart(2, '0')}`}
+                                </span>
+                              )}
                               <HiOutlineInformationCircle
                                 onClick={() => handleOpenUserModal(inv.investor)}
                                 className="text-gray-500 hover:text-[#ccff00] cursor-pointer transition-colors text-lg"
@@ -368,8 +387,23 @@ const SettlementManagement = () => {
                         </div>
 
                         <div className="text-center">
-                          <span className="text-[9px] font-black text-zinc-600 tracking-widest bg-zinc-900 px-2.5 py-1 rounded-md border border-white/5">
-                            #{inv.id.toString().padStart(6, '0')}
+                          <span className="text-[10px] font-mono font-bold text-zinc-300 tracking-wider bg-zinc-900 px-2.5 py-1 rounded-md border border-white/5">
+                            {(() => {
+                              if (inv.paybackStatus === 'PAID') {
+                                const settleDate = inv.updated_at || inv.updatedAt || inv.created_at || new Date();
+                                const d = new Date(settleDate);
+                                const dateStr = String(d.getDate()).padStart(2, '0') + String(d.getMonth() + 1).padStart(2, '0') + d.getFullYear();
+                                const isRefund = project?.status === 'EXPIRED';
+                                if (isRefund) {
+                                  return `REF-${dateStr}-${String(inv.id).padStart(2, '0')}`;
+                                }
+                                if (project?.projectType === 'Exclusive') {
+                                  return `EXP-PAY-${dateStr}-${String(inv.id).padStart(2, '0')}`;
+                                }
+                                return `STD-${dateStr}-${String(inv.id).padStart(2, '0')}`;
+                              }
+                              return inv.paymentId?.startsWith('pay_') ? inv.paymentId : `INV-${String(inv.id).padStart(6, '0')}`;
+                            })()}
                           </span>
                         </div>
 
@@ -649,7 +683,14 @@ const SettlementManagement = () => {
                   {(selectedUserForModal.fullName?.[0] || 'U').toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                    {(selectedUserForModal.customUserId || selectedUserForModal.id) && (
+                      <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                        {selectedUserForModal.customUserId || `MHI2026${String(selectedUserForModal.id).padStart(2, '0')}`}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[#ccff00] text-[10px] font-black uppercase tracking-widest mt-0.5">Investor Protocol Profile</p>
                 </div>
               </div>

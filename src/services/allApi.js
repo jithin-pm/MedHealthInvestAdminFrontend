@@ -12,6 +12,22 @@ export const getAllUsersApi = async () => {
     return await commonApi("GET", "/api/auth/all-users", "", "");
 };
 
+export const unblockUserApi = async (userId) => {
+    return await commonApi("POST", `/api/auth/unblock-user/${userId}`, {}, "");
+};
+
+export const toggleUserStatusApi = async (userId, data = {}) => {
+    return await commonApi("POST", `/api/auth/toggle-status/${userId}`, data, "");
+};
+
+export const adminUpdateUserApi = async (userId, data) => {
+    return await commonApi("PUT", `/api/auth/admin-update-user/${userId}`, data, "");
+};
+
+export const getUserActivityLogsApi = async (userId) => {
+    return await commonApi("GET", `/api/auth/user-activity-logs/${userId}`, "", "");
+};
+
 // Category APIs
 export const addCategoryApi = async (data) => {
     return await commonApi("POST", "/api/category/add", data, "");

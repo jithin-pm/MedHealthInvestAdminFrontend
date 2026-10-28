@@ -128,8 +128,8 @@ export const generateInvestmentReceipt = async (data, userData, action = 'downlo
 
     if (!isPayout && !isRefund) {
         table2Data.push(['Payment Method', 'Razorpay Secure Gateway']);
-        table2Data.push(['Transaction ID', paymentId || 'N/A']);
     }
+    table2Data.push(['Transaction ID', paymentId || 'N/A']);
 
     let amountLabel = 'Principal Amount';
     if (isRefund) amountLabel = 'Refund Amount';

@@ -85,7 +85,7 @@ const SpecialSettlementManagement = () => {
 
   // Auto-prompt for finalization
   const allPaid = investors.length > 0 && investors.every(inv => inv.paybackStatus === 'PAID');
-  
+
   React.useEffect(() => {
     if (allPaid && (project?.status === 'ONGOING' || project?.status === 'EXPIRED')) {
       const timer = setTimeout(() => {
@@ -127,7 +127,7 @@ const SpecialSettlementManagement = () => {
     }
   };
 
-  
+
   const [capitalReturnAmount, setCapitalReturnAmount] = useState('');
   const [payoutSchedule, setPayoutSchedule] = useState([]);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -136,7 +136,7 @@ const SpecialSettlementManagement = () => {
   const fetchSchedule = async (invId) => {
     try {
       const res = await getSpecialPayoutScheduleApi(invId);
-      if(res.status === 200) setPayoutSchedule(res.data.payouts);
+      if (res.status === 200) setPayoutSchedule(res.data.payouts);
       setIsScheduleModalOpen(true);
     } catch (err) {
       console.error(err);
@@ -153,13 +153,13 @@ const SpecialSettlementManagement = () => {
       showAlert('error', 'Required', 'Please enter a valid capital return amount');
       return;
     }
-    
+
     setIsSubmittingPayback(true);
     try {
       const formData = new FormData();
       formData.append('capitalPaid', capitalReturnAmount);
       formData.append('paybackProof', paybackProof);
-      
+
       const response = await recordSpecialPaybackApi(selectedInvestment.id, formData);
       if (response.status === 200) {
         showAlert('success', 'Success', 'Monthly payback recorded successfully');
@@ -269,9 +269,9 @@ const SpecialSettlementManagement = () => {
               </div>
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-xl font-bold text-white uppercase tracking-tight">Settlement Management</h1>     
+                  <h1 className="text-xl font-bold text-white uppercase tracking-tight">Settlement Management</h1>
                 </div>
-                
+
               </div>
             </div>
           </div>
@@ -341,6 +341,11 @@ const SpecialSettlementManagement = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-base font-bold text-white tracking-tight">{inv.investor?.fullName || 'Anonymous'}</p>
+                              {(inv.investor?.customUserId || inv.investor?.id) && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                                  {inv.investor?.customUserId || `MHI2026${String(inv.investor?.id).padStart(2, '0')}`}
+                                </span>
+                              )}
                               <HiOutlineInformationCircle
                                 onClick={() => handleOpenUserModal(inv.investor)}
                                 className="text-gray-500 hover:text-[#ccff00] cursor-pointer transition-colors text-lg"
@@ -476,125 +481,125 @@ const SpecialSettlementManagement = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                    {/* Bank Details section */}
-                    <div className="flex flex-col">
-                      <h4 className="text-xs font-bold text-white tracking-wider uppercase mb-4 pb-2 border-b border-white/10">
-                        Beneficiary Bank Details
-                      </h4>
-                      <div className="space-y-4">
-                        <div className="flex justify-between py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">Account Holder</span>
-                          <span className="text-white font-medium uppercase">
-                            {financialDetails?.bank?.accountHolderName || 'N/A'}
+                  {/* Bank Details section */}
+                  <div className="flex flex-col">
+                    <h4 className="text-xs font-bold text-white tracking-wider uppercase mb-4  pb-2 border-b border-white/10">
+                      Beneficiary Bank Details
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="flex justify-between py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">Account Holder</span>
+                        <span className="text-white font-medium uppercase">
+                          {financialDetails?.bank?.accountHolderName || 'N/A'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">Account Number</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-mono font-bold">
+                            {financialDetails?.bank?.accountNumber}
                           </span>
-                        </div>
-
-                        <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">Account Number</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-mono font-bold">
-                              {financialDetails?.bank?.accountNumber}
-                            </span>
-                            {financialDetails?.bank?.accountNumber && (
-                              <button
-                                onClick={() => handleCopyText(financialDetails.bank.accountNumber, 'Account Number')}
-                                className="p-1 text-zinc-400 hover:text-white transition-all active:scale-90"
-                                title="Copy"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">IFSC Code</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[#ccff00] font-mono font-bold uppercase tracking-wider">
-                              {financialDetails?.bank?.ifsc}
-                            </span>
-                            {financialDetails?.bank?.ifsc && (
-                              <button
-                                onClick={() => handleCopyText(financialDetails.bank.ifsc, 'IFSC Code')}
-                                className="p-1 text-zinc-400 hover:text-white transition-all active:scale-90"
-                                title="Copy"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">Bank Name</span>
-                          <span className="text-white font-medium uppercase">
-                            {financialDetails?.bank?.bankName}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">Branch & City</span>
-                          <span className="text-white font-medium uppercase">
-                            {financialDetails?.bank?.branch || 'N/A'} • {financialDetails?.bank?.city || 'N/A'}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">Payout Phone</span>
-                          <span className="text-white font-mono font-medium">
-                            {financialDetails?.bank?.payoutPhone || 'N/A'}
-                          </span>
+                          {financialDetails?.bank?.accountNumber && (
+                            <button
+                              onClick={() => handleCopyText(financialDetails.bank.accountNumber, 'Account Number')}
+                              className="p-1 text-zinc-400 hover:text-white transition-all active:scale-90"
+                              title="Copy"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* PAN details section */}
-                    <div className="flex flex-col pt-4">
-                      <h4 className="text-xs font-bold text-white tracking-wider uppercase mb-4 pb-2 border-b border-white/10">
-                        Identity Verification (PAN)
-                      </h4>
-                      <div className="space-y-4">
-                        <div className="flex justify-between py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">PAN Holder</span>
-                          <span className="text-white font-medium uppercase">
-                            {financialDetails?.pan?.fullName || 'N/A'}
+                      <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">IFSC Code</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#ccff00] font-mono font-bold uppercase tracking-wider">
+                            {financialDetails?.bank?.ifsc}
                           </span>
+                          {financialDetails?.bank?.ifsc && (
+                            <button
+                              onClick={() => handleCopyText(financialDetails.bank.ifsc, 'IFSC Code')}
+                              className="p-1 text-zinc-400 hover:text-white transition-all active:scale-90"
+                              title="Copy"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
+                      </div>
 
-                        <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
-                          <span className="text-zinc-500">PAN Number</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-mono font-bold tracking-wider uppercase">
-                              {financialDetails?.pan?.panNumber}
-                            </span>
-                            {financialDetails?.pan?.panNumber && (
-                              <button
-                                onClick={() => handleCopyText(financialDetails.pan.panNumber, 'PAN Number')}
-                                className="p-1 text-zinc-400 hover:text-white transition-all active:scale-90"
-                                title="Copy"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                      <div className="flex justify-between py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">Bank Name</span>
+                        <span className="text-white font-medium uppercase">
+                          {financialDetails?.bank?.bankName}
+                        </span>
+                      </div>
 
-                        {financialDetails?.pan?.dob && (
-                          <div className="flex justify-between py-2 border-b border-white/5 text-sm">
-                            <span className="text-zinc-500">Date of Birth</span>
-                            <span className="text-zinc-400">
-                              {new Date(financialDetails.pan.dob).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          </div>
-                        )}
+                      <div className="flex justify-between py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">Branch & City</span>
+                        <span className="text-white font-medium uppercase">
+                          {financialDetails?.bank?.branch || 'N/A'} • {financialDetails?.bank?.city || 'N/A'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">Payout Phone</span>
+                        <span className="text-white font-mono font-medium">
+                          {financialDetails?.bank?.payoutPhone || 'N/A'}
+                        </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* PAN details section */}
+                  <div className="flex flex-col pt-4">
+                    <h4 className="text-xs font-bold text-white tracking-wider uppercase mb-4 pb-2 border-b border-white/10">
+                      Identity Verification (PAN)
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="flex justify-between py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">PAN Holder</span>
+                        <span className="text-white font-medium uppercase">
+                          {financialDetails?.pan?.fullName || 'N/A'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                        <span className="text-zinc-500">PAN Number</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-mono font-bold tracking-wider uppercase">
+                            {financialDetails?.pan?.panNumber}
+                          </span>
+                          {financialDetails?.pan?.panNumber && (
+                            <button
+                              onClick={() => handleCopyText(financialDetails.pan.panNumber, 'PAN Number')}
+                              className="p-1 text-zinc-400 hover:text-white transition-all active:scale-90"
+                              title="Copy"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {financialDetails?.pan?.dob && (
+                        <div className="flex justify-between py-2 border-b border-white/5 text-sm">
+                          <span className="text-zinc-500">Date of Birth</span>
+                          <span className="text-zinc-400">
+                            {new Date(financialDetails.pan.dob).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <form onSubmit={handlePaybackSubmit} className="space-y-6">
                     <div className="flex flex-col gap-2">
@@ -659,7 +664,14 @@ const SpecialSettlementManagement = () => {
                   {(selectedUserForModal.fullName?.[0] || 'U').toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white tracking-tight">{selectedUserForModal.fullName}</h3>
+                    {(selectedUserForModal.customUserId || selectedUserForModal.id) && (
+                      <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
+                        {selectedUserForModal.customUserId || `MHI2026${String(selectedUserForModal.id).padStart(2, '0')}`}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[#ccff00] text-[10px] font-black uppercase tracking-widest mt-0.5">Investor Protocol Profile</p>
                 </div>
               </div>

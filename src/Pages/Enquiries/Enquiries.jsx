@@ -59,10 +59,15 @@ const Enquiries = () => {
   };
 
   const filteredEnquiries = enquiries.filter(
-    (enq) =>
-      enq.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enq.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enq.phone?.includes(searchTerm)
+    (enq) => {
+      const matchedUser = allUsers.find(u => u.email?.toLowerCase() === enq.email?.toLowerCase());
+      return (
+        enq.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enq.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enq.phone?.includes(searchTerm) ||
+        (matchedUser?.customUserId && matchedUser.customUserId.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
   );
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -88,7 +93,7 @@ const Enquiries = () => {
         <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
         <input
           type="text"
-          placeholder="Search by name or email"
+          placeholder="Search by User ID, name, email or phone"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-[#0c0c0c] border border-white/10 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all placeholder:text-gray-600"
@@ -116,6 +121,7 @@ const Enquiries = () => {
                 <thead>
                   <tr className="border-b border-white/10 bg-[#0a0a0a]/50">
                     <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] min-w-[200px]">Sender</th>
+                    <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] min-w-[120px]">User ID</th>
                     <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] min-w-[150px]">Contact</th>
                     <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] min-w-[150px]">Date</th>
                     <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] min-w-[200px]">Subject</th>
@@ -124,7 +130,9 @@ const Enquiries = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((enquiry) => (
+                  {currentItems.map((enquiry) => {
+                    const matchedUser = allUsers.find(u => u.email?.toLowerCase() === enquiry.email?.toLowerCase());
+                    return (
                     <tr
                       key={enquiry.id}
                       className="border-b border-white/5 hover:bg-white/[0.02] transition-colors duration-200 group"
@@ -134,6 +142,11 @@ const Enquiries = () => {
                           <span className="text-white font-bold text-sm">{enquiry.fullname}</span>
                           <span className="text-gray-500 text-[0.75rem]">{enquiry.email}</span>
                         </div>
+                      </td>
+                      <td className="py-5 px-6 align-top whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider inline-flex items-center">
+                          {matchedUser ? (matchedUser.customUserId || `MHI2026${String(matchedUser.id).padStart(2, '0')}`) : '---'}
+                        </span>
                       </td>
                       <td className="py-5 px-6 align-top">
                         <span className="text-gray-400 text-sm">{enquiry.countryCode} {enquiry.phone}</span>
@@ -163,11 +176,12 @@ const Enquiries = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
 
                   {filteredEnquiries.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="py-12 text-center text-gray-500 text-sm">
+                      <td colSpan="7" className="py-12 text-center text-gray-500 text-sm">
                         No enquiries found matching your search.
                       </td>
                     </tr>

@@ -5,6 +5,7 @@ import { TbRefresh } from 'react-icons/tb';
 import { FiPaperclip, FiDownload } from 'react-icons/fi';
 import { generateInvestmentReceipt } from '../../Utils/generateReceipt';
 import { generateTransactionReport } from '../../Utils/generateTransactionReport';
+import { getDisplayTransactionId } from '../../Utils/transactionUtils';
 import { BASE_URL } from '../../services/baseUrl';
 
 const PageHeader = ({ title, description }) => (
@@ -60,8 +61,11 @@ const RecentTransactions = () => {
   const filteredTransactions = transactions.filter(
     (tx) =>
       tx.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tx.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tx.user?.customUserId && tx.user.customUserId.toLowerCase().includes(searchTerm.toLowerCase())) ||
       tx.project?.projectName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tx.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      getDisplayTransactionId(tx).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tx.transactionId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Financial Stats Logic
@@ -99,19 +103,19 @@ const RecentTransactions = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard 
           title="Total Transaction Volume" 
-          value={`₹${totalVolume.toLocaleString('en-IN')}`} 
+          value={`₹\u2009${totalVolume.toLocaleString('en-IN')}`} 
           color="primary"
           icon={HiOutlineCurrencyRupee}
         />
         <StatCard 
           title="Total Refunds / Payouts" 
-          value={`₹${totalPayouts.toLocaleString('en-IN')}`} 
+          value={`₹\u2009${totalPayouts.toLocaleString('en-IN')}`} 
           color="success"
           icon={HiOutlineCash}
         />
         <StatCard 
           title="Pending Settlements" 
-          value={`₹${pendingSettlements.toLocaleString('en-IN')}`} 
+          value={`₹\u2009${pendingSettlements.toLocaleString('en-IN')}`} 
           color="warning"
           icon={HiOutlineClock}
         />
@@ -123,7 +127,7 @@ const RecentTransactions = () => {
           <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
           <input
             type="text"
-            placeholder="Search by sender or project"
+            placeholder="Search by User ID, sender, project, or transaction ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-[#0c0c0c] border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] transition-all placeholder:text-gray-600"
@@ -228,10 +232,11 @@ const RecentTransactions = () => {
 
         {/* Responsive Table Wrapper */}
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+          <table className="w-full text-left border-collapse min-w-[1150px]">
             <thead>
               <tr className="border-b border-white/10 bg-[#0a0a0a]/50">
-                <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">User Name</th>
+                <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Investor</th>
+                <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">User ID</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Transaction ID</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Project Detail</th>
                 <th className="py-4 px-6 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Project Type</th>
@@ -245,7 +250,7 @@ const RecentTransactions = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="py-12 text-center">
+                  <td colSpan="10" className="py-12 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-8 h-8 border-2 border-[#ccff00]/20 border-t-[#ccff00] rounded-full animate-spin" />
                       <span className="text-gray-500 text-[0.65rem] font-bold uppercase tracking-widest">Accessing Ledger...</span>
@@ -263,9 +268,14 @@ const RecentTransactions = () => {
                         <span className="text-gray-500 text-[0.7rem]">{tx.user?.email || 'N/A'}</span>
                       </div>
                     </td>
+                    <td className="py-5 px-6 whitespace-nowrap">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider inline-flex items-center">
+                        {tx.user?.customUserId || (tx.user?.id ? `MHI2026${String(tx.user.id).padStart(2, '0')}` : '---')}
+                      </span>
+                    </td>
                     <td className="py-5 px-6">
-                      <span className="text-gray-500 text-[0.65rem] font-mono whitespace-nowrap">
-                        {tx.transactionId || '---'}
+                      <span className="text-zinc-300 text-xs font-mono font-medium tracking-wider whitespace-nowrap bg-white/[0.03] border border-white/5 px-2.5 py-1 rounded-md">
+                        {getDisplayTransactionId(tx)}
                       </span>
                     </td>
                     <td className="py-5 px-6">
@@ -283,15 +293,49 @@ const RecentTransactions = () => {
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <span className={`text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase ${
-                        tx.type === 'REFUND' 
-                          ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
-                          : tx.type === 'PAYOUT'
-                            ? 'bg-[#00ffa3]/10 text-[#00ffa3] border border-[#00ffa3]/20'
-                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      }`}>
-                        {tx.type}
-                      </span>
+                      {(() => {
+                        if (tx.type === 'REFUND') {
+                          return (
+                            <span className="text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase bg-red-500/10 text-red-400 border border-red-500/20 whitespace-nowrap">
+                              Refund
+                            </span>
+                          );
+                        }
+
+                        if (tx.type === 'INVESTMENT') {
+                          return (
+                            <span className="text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20 whitespace-nowrap">
+                              Investment
+                            </span>
+                          );
+                        }
+
+                        // Special Project Payouts: check payoutCategory or description
+                        const isSpecial = tx.project?.projectType === 'Special' || tx.transactionId?.startsWith('SP_PAYOUT_');
+                        const category = tx.payoutCategory || (
+                          tx.description?.toLowerCase().includes('interest') ? 'INTEREST RETURNED' :
+                          tx.description?.toLowerCase().includes('capital') ? 'CAPITAL RETURNED' : null
+                        );
+
+                        if (isSpecial && category) {
+                          const isCapital = category.includes('CAPITAL') && !category.includes('INTEREST');
+                          return (
+                            <span className={`text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase whitespace-nowrap ${
+                              isCapital
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-[#00ffa3]/10 text-[#00ffa3] border border-[#00ffa3]/20'
+                            }`}>
+                              {category}
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <span className="text-[0.65rem] font-bold px-2 py-1 rounded tracking-widest uppercase bg-[#00ffa3]/10 text-[#00ffa3] border border-[#00ffa3]/20 whitespace-nowrap">
+                            Payout
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-5 px-6">
                       <span className="text-gray-400 text-sm whitespace-nowrap">
@@ -299,7 +343,7 @@ const RecentTransactions = () => {
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <span className="text-white font-bold text-sm">₹{Number(tx.amount).toLocaleString('en-IN')}</span>
+                      <span className="text-white font-bold text-sm"><span className="mr-0.5">₹</span>{Number(tx.amount).toLocaleString('en-IN')}</span>
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-2">
@@ -319,9 +363,10 @@ const RecentTransactions = () => {
                              <button
                                 onClick={async () => {
                                    const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
+                                   const displayId = getDisplayTransactionId(tx);
                                    const url = await generateInvestmentReceipt({
                                       amount: tx.amount,
-                                      paymentId: tx.transactionId,
+                                      paymentId: displayId,
                                       projectTitle: tx.project?.projectName,
                                       duration: tx.project?.duration || 1,
                                       isPayout: tx.type === 'PAYOUT',
@@ -339,9 +384,10 @@ const RecentTransactions = () => {
                              <button
                                 onClick={() => {
                                    const userData = { fullName: tx.user?.fullName, email: tx.user?.email };
+                                   const displayId = getDisplayTransactionId(tx);
                                    generateInvestmentReceipt({
                                       amount: tx.amount,
-                                      paymentId: tx.transactionId,
+                                      paymentId: displayId,
                                       projectTitle: tx.project?.projectName,
                                       duration: tx.project?.duration || 1,
                                       isPayout: true,
