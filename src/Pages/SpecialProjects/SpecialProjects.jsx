@@ -666,7 +666,7 @@ const SpecialProjects = () => {
                   {preSettledProof ? (
                     <div className="relative w-32 h-32 rounded-xl border border-white/10 overflow-hidden shrink-0">
                       <img
-                        src={typeof preSettledProof === 'string' ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/${preSettledProof}` : URL.createObjectURL(preSettledProof)}
+                        src={typeof preSettledProof === 'string' ? `${BASE_URL}/${preSettledProof}` : URL.createObjectURL(preSettledProof)}
                         alt="Proof Preview"
                         className="w-full h-full object-cover"
                       />

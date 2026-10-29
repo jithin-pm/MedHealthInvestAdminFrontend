@@ -26,7 +26,7 @@ const Login = () => {
       const response = await adminLoginApi({ email, password });
       
       if (response.status === 200) {
-        const { accessToken, user, role } = response.data;
+        const { accessToken, user, role, refreshToken } = response.data;
 
         // Check if the user has an admin role
         if (role === 'admin') {
