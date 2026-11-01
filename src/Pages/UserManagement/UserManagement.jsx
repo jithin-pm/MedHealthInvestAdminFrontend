@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HiOutlineSearch } from 'react-icons/hi';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
-import { FiX, FiShield, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload, FiFileText, FiUnlock, FiUserX, FiUserCheck, FiEdit3, FiActivity, FiMonitor, FiSmartphone, FiTablet, FiGlobe, FiClock } from 'react-icons/fi';
+import { FiX, FiShield, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload, FiFileText, FiUnlock, FiUserX, FiUserCheck, FiEdit3, FiActivity, FiMonitor, FiSmartphone, FiTablet, FiGlobe, FiClock, FiMapPin } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { getAllUsersApi, getUserVerificationStatusApi, getAllTransactionsApi, unblockUserApi, toggleUserStatusApi, adminUpdateUserApi, getUserActivityLogsApi } from '../../services/allApi';
 import { BASE_URL } from '../../services/baseUrl';
@@ -1291,6 +1291,7 @@ const UserManagement = () => {
                     <thead>
                       <tr className="border-b border-white/10 bg-[#0a0a0a]/60">
                         <th className="py-3 px-4 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Login Time</th>
+                        <th className="py-3 px-4 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Location</th>
                         <th className="py-3 px-4 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">IP Address</th>
                         <th className="py-3 px-4 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Device & Hardware</th>
                         <th className="py-3 px-4 text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em]">Browser / OS</th>
@@ -1314,6 +1315,25 @@ const UserManagement = () => {
                                   <span className="text-gray-500 text-[11px] font-mono">
                                     {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                   </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                                  <FiMapPin size={13} />
+                                </div>
+                                <div className="flex flex-col max-w-[190px]">
+                                  <span className="text-white text-xs font-bold truncate" title={log.location || 'Location Not Available'}>
+                                    {log.location || (log.latitude && log.longitude ? `${Number(log.latitude).toFixed(3)}°, ${Number(log.longitude).toFixed(3)}°` : 'Not Available')}
+                                  </span>
+                                  {log.latitude && log.longitude ? (
+                                    <span className="text-gray-400 text-[10px] font-mono">
+                                      {Number(log.latitude).toFixed(4)}, {Number(log.longitude).toFixed(4)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-600 text-[10px]">No GPS fix</span>
+                                  )}
                                 </div>
                               </div>
                             </td>
