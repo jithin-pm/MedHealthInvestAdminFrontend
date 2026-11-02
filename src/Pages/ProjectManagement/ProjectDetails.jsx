@@ -277,18 +277,18 @@ const ProjectDetails = () => {
         </div>
 
         {/* Stats Sidebar */}
-        <div className="space-y-6 mt-12 lg:mt-0">
+        <div className="space-y-3 mt-8 lg:mt-0">
           {[
             { label: 'Target ROI', value: `${project.roi}%`, icon: HiOutlineTrendingUp, color: 'text-[#ccff00]' },
             { label: 'Duration', value: `${project.duration} Months`, icon: HiOutlineClock, color: 'text-blue-400' },
             { label: 'Target Amount', value: `₹\u2009${Number(project.targetAmount).toLocaleString('en-IN')}`, icon: HiOutlineCurrencyRupee, color: 'text-purple-400' },
           ].map((stat, i) => (
-            <div key={i} className="bg-[#0c0c0c] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors group">
-              <div className={`p-3 rounded-2xl bg-white/[0.03] w-fit mb-6 group-hover:scale-110 transition-transform`}>
-                <stat.icon className={`text-2xl ${stat.color}`} />
+            <div key={i} className="bg-[#0c0c0c] border border-white/5 py-4 px-5 rounded-2xl hover:border-white/10 transition-colors group">
+              <div className={`p-2 rounded-xl bg-white/[0.03] w-fit mb-2.5 group-hover:scale-105 transition-transform`}>
+                <stat.icon className={`text-xl ${stat.color}`} />
               </div>
-              <p className="text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-              <p className="text-2xl font-black text-white">{stat.value}</p>
+              <p className="text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.15em] mb-0.5">{stat.label}</p>
+              <p className="text-xl font-black text-white">{stat.value}</p>
             </div>
           ))}
         </div>

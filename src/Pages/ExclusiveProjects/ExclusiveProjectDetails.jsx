@@ -19,10 +19,10 @@ import {
 import { FaImage } from 'react-icons/fa';
 import { LuCrown } from 'react-icons/lu';
 import { BASE_URL } from '../../services/baseUrl';
-import { 
-  getProjectByIdApi, 
-  getAllUsersApi, 
-  getUserFinancialDetailsApi, 
+import {
+  getProjectByIdApi,
+  getAllUsersApi,
+  getUserFinancialDetailsApi,
   getProjectInvestorsApi,
   getAllTransactionsApi
 } from '../../services/allApi';
@@ -70,7 +70,7 @@ const ExclusiveProjectDetails = () => {
         const user = response.data.find(u => String(u.id) === String(userId));
         if (user) setAssignedUser(user);
       }
-      
+
       const finRes = await getUserFinancialDetailsApi(userId);
       if (finRes.status === 200) {
         setFinancialDetails(finRes.data);
@@ -173,7 +173,7 @@ const ExclusiveProjectDetails = () => {
 
   const handleDownloadStatement = async () => {
     if (!project) return;
-    
+
     Swal.fire({
       title: 'Preparing Statement',
       text: 'Compiling institutional audit records...',
@@ -240,13 +240,13 @@ const ExclusiveProjectDetails = () => {
   };
 
   const primaryInvestment = (investors && investors.length > 0) ? investors[0] : null;
-  const proofAttachment = 
-    primaryInvestment?.paybackProof || 
-    primaryInvestment?.paymentProof || 
-    primaryInvestment?.proof || 
-    primaryInvestment?.transactionProof || 
-    project.preSettledProof || 
-    project.paymentProof || 
+  const proofAttachment =
+    primaryInvestment?.paybackProof ||
+    primaryInvestment?.paymentProof ||
+    primaryInvestment?.proof ||
+    primaryInvestment?.transactionProof ||
+    project.preSettledProof ||
+    project.paymentProof ||
     project.proof;
 
   const capitalInvested = parseFloat(primaryInvestment?.amount || project.collectedAmount || project.targetAmount || 0);
@@ -273,41 +273,41 @@ const ExclusiveProjectDetails = () => {
           <HiOutlineChevronLeft className="text-xl group-hover:-translate-x-1 transition-transform" />
           <span className="text-xs font-black uppercase tracking-widest">Back to Exclusive Projects</span>
         </button>
-        
+
         <div className="flex flex-col gap-1">
           <span className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Project Name</span>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight">{project.projectName}</h1>
-          <span className="px-3 py-1 bg-white/10 border border-white/20 text-white/70 text-xs font-black rounded uppercase tracking-widest">
-            ID: {project.id}
-          </span>
-          {project.status === 'EXPIRED' ? (
-            <span className="px-3 py-1 bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-black rounded uppercase tracking-widest flex items-center gap-1.5 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.3)]">
-              Refund Pending
+            <span className="px-3 py-1 bg-white/10 border border-white/20 text-white/70 text-xs font-black rounded uppercase tracking-widest">
+              ID: {project.id}
             </span>
-          ) : (
-            <span className="px-3 py-1 bg-[#ccff00]/10 border border-[#ccff00]/20 text-[#ccff00] text-xs font-black rounded uppercase tracking-widest">
-              {project.status}
-            </span>
-          )}
-          {project.projectCategory && (
-            <span className="px-3 py-1 bg-white/5 border border-white/10 text-gray-400 text-xs font-black rounded uppercase tracking-widest">
-              {project.projectCategory}
-            </span>
-          )}
+            {project.status === 'EXPIRED' ? (
+              <span className="px-3 py-1 bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-black rounded uppercase tracking-widest flex items-center gap-1.5 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                Refund Pending
+              </span>
+            ) : (
+              <span className="px-3 py-1 bg-[#ccff00]/10 border border-[#ccff00]/20 text-[#ccff00] text-xs font-black rounded uppercase tracking-widest">
+                {project.status}
+              </span>
+            )}
+            {project.projectCategory && (
+              <span className="px-3 py-1 bg-white/5 border border-white/10 text-gray-400 text-xs font-black rounded uppercase tracking-widest">
+                {project.projectCategory}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
       {/* Top 2-Column Grid: Financial Overview & Assigned Investor */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-        
+
         {/* Financial Overview Card */}
         <div className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 overflow-hidden relative group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#ccff00]/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
-          
+
           <h3 className="text-[0.7rem] font-black text-gray-500 uppercase tracking-[0.2em] mb-8">Financial Overview</h3>
-          
+
           <div className="space-y-8">
             <div>
               <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -316,9 +316,9 @@ const ExclusiveProjectDetails = () => {
               </p>
               <p className="text-3xl font-black text-white"><span className="mr-1">₹</span>{capitalInvested.toLocaleString('en-IN')}</p>
             </div>
-            
+
             <div className="w-full h-px bg-gradient-to-r from-white/10 to-transparent" />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -343,7 +343,7 @@ const ExclusiveProjectDetails = () => {
             </div>
 
             <div className="w-full h-px bg-gradient-to-r from-white/10 to-transparent" />
-            
+
             <div>
               <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                 <HiOutlineCurrencyRupee className="text-[#ccff00] text-lg" />
@@ -390,7 +390,7 @@ const ExclusiveProjectDetails = () => {
                 </button>
               )}
             </div>
-            
+
             {assignedUser ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -456,7 +456,7 @@ const ExclusiveProjectDetails = () => {
           {/* Action Buttons in Card */}
           <div className="pt-8 border-t border-white/5 flex flex-wrap gap-3 mt-6">
             {(project.status === 'ONGOING' || project.status === 'EXPIRED') && (
-              <button 
+              <button
                 onClick={() => navigate(`/dashboard/exclusive-projects/settlement/${id}`)}
                 className="flex-1 py-3.5 rounded-xl bg-white hover:bg-gray-200 text-black font-black text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95"
               >
@@ -464,7 +464,7 @@ const ExclusiveProjectDetails = () => {
                 {project.status === 'EXPIRED' ? 'Process Refund' : 'Initiate Settlement'}
               </button>
             )}
-            <button 
+            <button
               onClick={handleDownloadStatement}
               className="py-3.5 px-5 rounded-xl bg-[#ccff00] hover:bg-[#b3ff00] text-black font-black text-xs tracking-wider uppercase shadow-[0_0_20px_rgba(204,255,0,0.2)] transition-all flex items-center justify-center gap-2 active:scale-95"
             >
@@ -484,7 +484,7 @@ const ExclusiveProjectDetails = () => {
               Initial Investment Data
             </h3>
           </div>
-          
+
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -548,14 +548,14 @@ const ExclusiveProjectDetails = () => {
                         <td className="py-6 px-6 text-right">
                           {invProof ? (
                             <div className="flex items-center justify-end gap-2">
-                              <button 
+                              <button
                                 onClick={() => setSelectedImage(invProof)}
                                 className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                                 title="View Proof"
                               >
                                 <HiOutlineEye className="text-lg" />
                               </button>
-                              <button 
+                              <button
                                 onClick={(e) => handleDownloadProof(invProof, e)}
                                 className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                                 title="Download Proof"
@@ -606,14 +606,14 @@ const ExclusiveProjectDetails = () => {
                     <td className="py-6 px-6 text-right">
                       {proofAttachment ? (
                         <div className="flex items-center justify-end gap-2">
-                          <button 
+                          <button
                             onClick={() => setSelectedImage(proofAttachment)}
                             className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                             title="View Proof"
                           >
                             <HiOutlineEye className="text-lg" />
                           </button>
-                          <button 
+                          <button
                             onClick={(e) => handleDownloadProof(proofAttachment, e)}
                             className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                             title="Download Proof"
@@ -708,14 +708,14 @@ const ExclusiveProjectDetails = () => {
                           <td className="py-6 px-6 text-right">
                             {invProof ? (
                               <div className="flex items-center justify-end gap-2">
-                                <button 
+                                <button
                                   onClick={() => setSelectedImage(invProof)}
                                   className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                                   title="View Proof"
                                 >
                                   <HiOutlineEye className="text-lg" />
                                 </button>
-                                <button 
+                                <button
                                   onClick={(e) => handleDownloadProof(invProof, e)}
                                   className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                                   title="Download Proof"
@@ -771,14 +771,14 @@ const ExclusiveProjectDetails = () => {
                       <td className="py-6 px-6 text-right">
                         {settlementProof ? (
                           <div className="flex items-center justify-end gap-2">
-                            <button 
+                            <button
                               onClick={() => setSelectedImage(settlementProof)}
                               className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                               title="View Proof"
                             >
                               <HiOutlineEye className="text-lg" />
                             </button>
-                            <button 
+                            <button
                               onClick={(e) => handleDownloadProof(settlementProof, e)}
                               className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                               title="Download Proof"
@@ -841,7 +841,7 @@ const ExclusiveProjectDetails = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col items-center">
             <div className="w-full flex justify-end mb-4">
-              <button 
+              <button
                 onClick={() => setSelectedImage(null)}
                 className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all backdrop-blur-md"
               >
@@ -849,9 +849,9 @@ const ExclusiveProjectDetails = () => {
               </button>
             </div>
             <div className="relative w-full rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-              <img 
-                src={getImageUrl(selectedImage)} 
-                alt="Document Preview" 
+              <img
+                src={getImageUrl(selectedImage)}
+                alt="Document Preview"
                 className="w-full h-auto max-h-[80vh] object-contain bg-black/50"
               />
             </div>
@@ -863,15 +863,15 @@ const ExclusiveProjectDetails = () => {
       {isVideoModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="relative w-full max-w-5xl aspect-video rounded-[2.5rem] overflow-hidden">
-            <button 
+            <button
               onClick={() => setIsVideoModalOpen(false)}
               className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-10 backdrop-blur-md border border-white/10"
             >
               <HiX className="text-2xl" />
             </button>
-            <video 
-              src={getImageUrl(project.projectVideo)} 
-              controls 
+            <video
+              src={getImageUrl(project.projectVideo)}
+              controls
               autoPlay
               className="w-full h-full object-contain bg-black"
             />
@@ -883,7 +883,7 @@ const ExclusiveProjectDetails = () => {
       {isUserModalOpen && assignedUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-xs animate-in fade-in duration-300">
           <div className="relative w-full max-w-lg bg-[#0c0c0c] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-            
+
             {/* Header */}
             <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
               <div className="flex items-center gap-4">
@@ -900,7 +900,7 @@ const ExclusiveProjectDetails = () => {
                   <p className="text-[#ccff00] text-[10px] font-black uppercase tracking-widest mt-0.5">Investor Protocol Profile</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsUserModalOpen(false)}
                 className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all"
               >
@@ -910,7 +910,7 @@ const ExclusiveProjectDetails = () => {
 
             {/* Body */}
             <div className="p-8 space-y-6">
-              
+
               {/* Contact Details */}
               <div className="grid grid-cols-2 gap-6">
                 <div className="flex flex-col gap-1.5">
@@ -926,7 +926,7 @@ const ExclusiveProjectDetails = () => {
               {/* Dummy/Actual PAN Card Section */}
               <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-white/5 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                  <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" /></svg>
                 </div>
                 <div className="relative z-10">
                   <span className="text-[9px] font-black text-[#ccff00] uppercase tracking-[0.3em] mb-4 block">Taxation ID (PAN)</span>
