@@ -664,8 +664,8 @@ const SpecialProjectDetails = () => {
                           <td className="py-4 px-6 text-right">
                             <span className="text-sm font-black text-red-400">
                               {group.capitalPaid > 0 ? (
-  <span className="text-white font-mono">-<span className="mr-0.5">₹</span>{group.capitalPaid.toLocaleString()}</span>
-) : '-'}
+                                <span className="text-white font-mono">-<span className="mr-0.5">₹</span>{group.capitalPaid.toLocaleString()}</span>
+                              ) : '-'}
                             </span>
                           </td>
                           <td className="py-4 px-6 text-center">
@@ -848,17 +848,22 @@ const SpecialProjectDetails = () => {
               {/* In Interest Payback Tab: Pending Months Radio Buttons or "No interest pending" */}
               {paybackType === 'INTEREST' && (
                 <div>
-                  <h3 className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest mb-3">Pending Interest Months</h3>
+                  <h3 className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest mb-3">
+                    {paybackModalMode === 'INTEREST' && selectedPendingMonth ? 'Selected Interest Month' : 'Pending Interest Months'}
+                  </h3>
                   {pendingInterestMonths.length > 0 ? (
                     <div className="space-y-2.5">
-                      {pendingInterestMonths.map((m) => {
-                        const isSelected = selectedPendingMonth?.id === m.id;
+                      {((paybackModalMode === 'INTEREST' && selectedPendingMonth)
+                        ? [selectedPendingMonth]
+                        : pendingInterestMonths
+                      ).map((m) => {
+                        const isSelected = selectedPendingMonth?.id === m.id || (!selectedPendingMonth && pendingInterestMonths[0]?.id === m.id);
                         return (
                           <label
                             key={m.id}
                             onClick={() => {
                               setSelectedPendingMonth(m);
-                              setPaybackAmount(String(m.dueAmount));
+                              setPaybackAmount(String(m.dueAmount || 0));
                             }}
                             className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${isSelected
                               ? 'bg-[#ccff00]/10 border-[#ccff00] text-white shadow-[0_0_15px_rgba(204,255,0,0.1)]'
@@ -872,13 +877,13 @@ const SpecialProjectDetails = () => {
                                 checked={isSelected}
                                 onChange={() => {
                                   setSelectedPendingMonth(m);
-                                  setPaybackAmount(String(m.dueAmount));
+                                  setPaybackAmount(String(m.dueAmount || 0));
                                 }}
                                 className="accent-[#ccff00] w-4 h-4 cursor-pointer"
                               />
                               <span className="text-xs font-bold uppercase tracking-wider">{m.monthLabel}</span>
                             </div>
-                            <span className="text-xs font-black text-[#ccff00]"><span className="mr-0.5">₹</span>{m.dueAmount.toLocaleString()}</span>
+                            <span className="text-xs font-black text-[#ccff00]"><span className="mr-0.5">₹</span>{(m.dueAmount || 0).toLocaleString()}</span>
                           </label>
                         );
                       })}
