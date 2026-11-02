@@ -15,20 +15,6 @@ const PageHeader = ({ title, description }) => (
   </div>
 );
 
-const StatCard = ({ title, value, color, icon: Icon }) => (
-  <div className="flex-1 bg-[#0c0c0c] border border-white/10 rounded-2xl p-6 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <div className="flex items-center justify-between mb-4">
-      <span className="text-gray-500 text-[0.65rem] font-bold uppercase tracking-widest">{title}</span>
-      <div className={`p-2 rounded-lg bg-white/5 text-${color === 'primary' ? '[#ccff00]' : color === 'success' ? '[#00ffa3]' : 'orange-400'}`}>
-        <Icon className="text-xl" />
-      </div>
-    </div>
-    <div className="text-2xl font-bold text-white">
-      {value}
-    </div>
-  </div>
-);
-
 const RecentTransactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [transactions, setTransactions] = useState([]);
@@ -68,18 +54,7 @@ const RecentTransactions = () => {
       tx.transactionId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Financial Stats Logic
-  const totalVolume = transactions
-    .filter(tx => tx.type === 'INVESTMENT')
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
-    
-  const totalPayouts = transactions
-    .filter(tx => tx.type === 'PAYOUT' || tx.type === 'REFUND')
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
-    
-  const pendingSettlements = totalVolume - totalPayouts;
-
-  // Pagination Logic
+    // Pagination Logic
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -98,28 +73,6 @@ const RecentTransactions = () => {
         title="Recent Transactions" 
         description="Monitor investments, yield distributions, and payment history." 
       />
-
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard 
-          title="Total Transaction Volume" 
-          value={`₹\u2009${totalVolume.toLocaleString('en-IN')}`} 
-          color="primary"
-          icon={HiOutlineCurrencyRupee}
-        />
-        <StatCard 
-          title="Total Refunds / Payouts" 
-          value={`₹\u2009${totalPayouts.toLocaleString('en-IN')}`} 
-          color="success"
-          icon={HiOutlineCash}
-        />
-        <StatCard 
-          title="Pending Settlements" 
-          value={`₹\u2009${pendingSettlements.toLocaleString('en-IN')}`} 
-          color="warning"
-          icon={HiOutlineClock}
-        />
-      </div>
 
       {/* Search and Filter Strip */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">

@@ -598,11 +598,6 @@ const ExclusiveProjects = () => {
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Capital Invested</span>
                     <span className="text-xl font-bold text-white"><span className="mr-0.5">₹</span>{Number(project.collectedAmount || project.targetAmount || 0).toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[0.6rem] text-[#ccff00] font-bold uppercase tracking-[0.2em] mb-1">Capital + Interest</span>
-                    <span className="text-xl font-black text-[#ccff00]"><span className="mr-0.5">₹</span>{(Number(project.collectedAmount || project.targetAmount || 0) + Math.round((Number(project.collectedAmount || project.targetAmount || 0) * Number(project.roi || 0) * Number(project.duration || 1)) / 100)).toLocaleString('en-IN')}</span>
-                    <span className="text-[10px] text-gray-400 font-medium">+₹{Math.round((Number(project.collectedAmount || project.targetAmount || 0) * Number(project.roi || 0) * Number(project.duration || 1)) / 100).toLocaleString('en-IN')} Interest</span>
-                  </div>
 
                   {project.projectType === 'Exclusive' && (() => {
                     const assignedInvestor = allUsers.find(u => u.id === project.exclusiveUserId);

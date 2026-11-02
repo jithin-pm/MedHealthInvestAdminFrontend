@@ -205,6 +205,73 @@ const ExclusiveProjectDetails = () => {
     }
   };
 
+  // Project Ending Date & Countdown for Ongoing Projects
+  const projectEndingDate = React.useMemo(() => {
+    if (!project) return null;
+    if (project.completionDate) {
+      const d = new Date(project.completionDate);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (project.ongoingStartDate && project.duration) {
+      const d = new Date(new Date(project.ongoingStartDate).getTime() + (parseInt(project.duration) * 30 * 24 * 60 * 60 * 1000));
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (project.activeDeadline) {
+      const d = new Date(project.activeDeadline);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (project.duration && (project.created_at || project.createdAt)) {
+      const start = new Date(project.created_at || project.createdAt);
+      const d = new Date(start.getTime() + (parseInt(project.duration) * 30 * 24 * 60 * 60 * 1000));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }, [project]);
+
+  const [countdown, setCountdown] = React.useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isCompleted: false,
+    hasDate: false
+  });
+
+  React.useEffect(() => {
+    if (!projectEndingDate) {
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isCompleted: false, hasDate: false });
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const diffMs = projectEndingDate.getTime() - now.getTime();
+
+      if (diffMs <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isCompleted: true, hasDate: true });
+        return;
+      }
+
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+      const seconds = Math.floor((diffMs / 1000) % 60);
+
+      setCountdown({
+        days,
+        hours,
+        minutes,
+        seconds,
+        isCompleted: false,
+        hasDate: true
+      });
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [projectEndingDate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
@@ -222,6 +289,10 @@ const ExclusiveProjectDetails = () => {
       </div>
     );
   }
+
+  const formattedEndingDate = projectEndingDate
+    ? projectEndingDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+    : 'Not Specified';
 
   const formatDisplayDate = (dateVal) => {
     if (!dateVal) return 'N/A';
@@ -346,12 +417,31 @@ const ExclusiveProjectDetails = () => {
           <h3 className="text-[0.7rem] font-black text-gray-500 uppercase tracking-[0.2em] mb-8">Financial Overview</h3>
 
           <div className="space-y-8">
-            <div>
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                <HiOutlineCurrencyRupee className="text-[#ccff00] text-lg" />
-                Capital Invested
-              </p>
-              <p className="text-3xl font-black text-white"><span className="mr-1">₹</span>{capitalInvested.toLocaleString('en-IN')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <HiOutlineCurrencyRupee className="text-[#ccff00] text-lg" />
+                  Capital Invested
+                </p>
+                <p className="text-3xl font-black text-white"><span className="mr-1">₹</span>{capitalInvested.toLocaleString('en-IN')}</p>
+              </div>
+
+              <div>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <HiOutlineClock className="text-[#ccff00] text-lg" />
+                  {isProjectCompleted ? 'Completion Date' : 'Project Ending Date'}
+                </p>
+                <p className="text-2xl font-black text-white">{formattedEndingDate}</p>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#ccff00] font-bold mt-1.5">
+                  {isProjectCompleted ? (
+                    <span className="text-emerald-400 font-sans uppercase tracking-wider text-[10px]">Completed & Settled</span>
+                  ) : countdown.hasDate && !countdown.isCompleted ? (
+                    <span>{countdown.days}d : {String(countdown.hours).padStart(2, '0')}h : {String(countdown.minutes).padStart(2, '0')}m : {String(countdown.seconds).padStart(2, '0')}s</span>
+                  ) : (
+                    <span className="text-orange-400 font-sans uppercase tracking-wider text-[10px]">Pending Settlement</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="w-full h-px bg-gradient-to-r from-white/10 to-transparent" />
@@ -400,7 +490,7 @@ const ExclusiveProjectDetails = () => {
 
                   {isProjectCompleted && (
                     <div className="bg-white/[0.05] border border-[#ccff00]/30 rounded-2xl p-4 flex flex-col justify-between bg-gradient-to-br from-[#ccff00]/10 to-transparent">
-                      <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] mb-2">Capital + Interest</span>
+                      <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] mb-2">Amount Paid Back</span>
                       <span className="text-white font-black text-lg"><span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}</span>
                     </div>
                   )}
@@ -530,11 +620,8 @@ const ExclusiveProjectDetails = () => {
                 <tr className="border-b border-white/10 bg-white/[0.02]">
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Investment Date</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Amount Invested</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Capital Invested</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (ROI)</th>
-                  {isProjectCompleted && (
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Capital + Interest</th>
-                  )}
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                 </tr>
               </thead>
@@ -578,16 +665,6 @@ const ExclusiveProjectDetails = () => {
                             {project.roi}%
                           </span>
                         </td>
-                        {isProjectCompleted && (
-                          <td className="py-6 px-6">
-                            <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-                              <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
-                            </span>
-                            <span className="block text-[10px] text-gray-400 font-medium">
-                              (+₹{invInterest.toLocaleString('en-IN')})
-                            </span>
-                          </td>
-                        )}
                         <td className="py-6 px-6 text-right">
                           {invProof ? (
                             <div className="flex items-center justify-end gap-2">
@@ -638,16 +715,6 @@ const ExclusiveProjectDetails = () => {
                         {project.roi}%
                       </span>
                     </td>
-                    {isProjectCompleted && (
-                      <td className="py-6 px-6">
-                        <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-                          <span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}
-                        </span>
-                        <span className="block text-[10px] text-gray-400 font-medium">
-                          (+₹{estReturns.toLocaleString('en-IN')})
-                        </span>
-                      </td>
-                    )}
                     <td className="py-6 px-6 text-right">
                       {proofAttachment ? (
                         <div className="flex items-center justify-end gap-2">
@@ -695,9 +762,9 @@ const ExclusiveProjectDetails = () => {
                   <tr className="border-b border-white/10 bg-white/[0.02]">
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Paid Back Date</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Capital Paid</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Capital Invested</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (ROI)</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Capital + Interest</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Amount Paid Back</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                   </tr>
                 </thead>

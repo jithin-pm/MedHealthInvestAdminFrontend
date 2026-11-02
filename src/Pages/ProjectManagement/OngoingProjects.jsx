@@ -341,7 +341,14 @@ const OngoingProjects = () => {
                 <div className="grid grid-cols-2 gap-y-6 mb-6 pt-2">
                   <div className="flex flex-col">
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Est. ROI</span>
-                    <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
+                      {project.roi && !isNaN(parseFloat(project.roi)) && parseFloat(project.roi) > 0 && (
+                        <span className="text-[0.65rem] font-mono font-bold text-[#ccff00] bg-[#ccff00]/10 px-1.5 py-0.5 rounded border border-[#ccff00]/20 tracking-wider">
+                          {(parseFloat(project.roi) * 12).toFixed(1).replace(/\.0$/, '')}% Per Annum
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Duration</span>
@@ -490,7 +497,7 @@ const OngoingProjects = () => {
                     <input type="number" step="any" name="roi" min="0" value={projectData.roi} onChange={handleInputChange} placeholder="e.g. 1.5" className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#ccff00] outline-none" />
                     {projectData.roi && !isNaN(parseFloat(projectData.roi)) && parseFloat(projectData.roi) > 0 && (
                       <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-white/[0.02] border border-white/5 text-[10px]">
-                        <span className="text-gray-400">Yearly ROI:</span>
+                        <span className="text-gray-400">Per Annum ROI:</span>
                         <span className="text-[#ccff00] font-mono font-bold">
                           {(parseFloat(projectData.roi) * 12).toFixed(2).replace(/\.00$/, '')}%
                         </span>

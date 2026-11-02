@@ -6,6 +6,16 @@ export const adminLoginApi = async (data) => {
     return await commonApi("POST", "/api/auth/admin-login", data, "");
 };
 
+// Verify Admin Login OTP
+export const verifyAdminLoginOtpApi = async (data) => {
+    return await commonApi("POST", "/api/auth/verify-admin-login-otp", data, "");
+};
+
+// Resend Admin Login OTP
+export const resendAdminOtpApi = async (data) => {
+    return await commonApi("POST", "/api/auth/resend-admin-otp", data, "");
+};
+
 // If there are other admin specific APIs, they can be added here
 // For example:
 export const getAllUsersApi = async () => {

@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   HiOutlineTrendingUp,
   HiOutlineClock,
+  HiOutlineCalendar,
   HiOutlineCurrencyRupee,
   HiOutlineChevronLeft,
   HiOutlineStar,
@@ -23,6 +24,7 @@ import { getProjectByIdApi, getProjectInvestorsApi } from '../../services/allApi
 import Swal from 'sweetalert2';
 import { generateProjectStatement } from '../../Utils/generateStatement';
 import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
+import { getDisplayTransactionId } from '../../Utils/transactionUtils';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -178,6 +180,73 @@ const ProjectDetails = () => {
     }
   }, [projectImageUrl]);
 
+  // Project Ending Date & Countdown for Ongoing Projects
+  const projectEndingDate = React.useMemo(() => {
+    if (!project) return null;
+    if (project.completionDate) {
+      const d = new Date(project.completionDate);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (project.ongoingStartDate && project.duration) {
+      const d = new Date(new Date(project.ongoingStartDate).getTime() + (parseInt(project.duration) * 30 * 24 * 60 * 60 * 1000));
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (project.activeDeadline) {
+      const d = new Date(project.activeDeadline);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (project.duration && (project.created_at || project.createdAt)) {
+      const start = new Date(project.created_at || project.createdAt);
+      const d = new Date(start.getTime() + (parseInt(project.duration) * 30 * 24 * 60 * 60 * 1000));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }, [project]);
+
+  const [countdown, setCountdown] = React.useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isCompleted: false,
+    hasDate: false
+  });
+
+  React.useEffect(() => {
+    if (!projectEndingDate) {
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isCompleted: false, hasDate: false });
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const diffMs = projectEndingDate.getTime() - now.getTime();
+
+      if (diffMs <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isCompleted: true, hasDate: true });
+        return;
+      }
+
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+      const seconds = Math.floor((diffMs / 1000) % 60);
+
+      setCountdown({
+        days,
+        hours,
+        minutes,
+        seconds,
+        isCompleted: false,
+        hasDate: true
+      });
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [projectEndingDate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
@@ -200,6 +269,19 @@ const ProjectDetails = () => {
   const totalInvested = investors.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0) || Number(project.collectedAmount || 0);
   const totalInterest = Math.round((totalInvested * Number(project.roi || 0) * durationMonths) / 100);
   const totalPaidBack = totalInvested + (project.status === 'EXPIRED' ? 0 : totalInterest);
+  const isActiveProject = project.status === 'ACTIVE';
+  const isOngoingProject = project.status === 'ONGOING';
+  const isCompletedProject = project.status === 'COMPLETED';
+  const targetAmount = Number(project.targetAmount || 0);
+  const fundingPercent = targetAmount > 0
+    ? Math.round((totalInvested / targetAmount) * 100)
+    : 0;
+
+
+
+  const formattedEndingDate = projectEndingDate
+    ? projectEndingDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+    : 'Not Specified';
 
   return (
     <div className="min-h-screen bg-black p-4 md:p-8 lg:p-12 font-['Inter']">
@@ -375,10 +457,10 @@ const ProjectDetails = () => {
             <div>
               <h3 className="text-xs font-black text-[#ccff00] uppercase tracking-[0.2em] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse"></span>
-                Financial Overview & Payback Breakdown
+                {isCompletedProject ? 'Financial Overview & Payback Breakdown' : 'Financial Overview'}
               </h3>
               <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest mt-1">
-                Project Investment & Settlement Ledger
+                {isActiveProject ? 'Project Capital & Funding Progress' : 'Project Capital & Investment Ledger'}
               </p>
             </div>
 
@@ -402,60 +484,169 @@ const ProjectDetails = () => {
             </div>
           </div>
 
-          {/* Financial Breakdown Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
-            {/* 1. Amount Invested */}
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
-              <div>
-                <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
-                  Amount Invested
-                </span>
-                <p className="text-2xl font-black text-white">
-                  <span className="mr-0.5">₹</span>{totalInvested.toLocaleString('en-IN')}
-                </p>
-              </div>
-              <span className="text-[10px] text-gray-500 font-medium mt-3">Total Capital Secured</span>
-            </div>
+          {/* Financial Breakdown & Funding Progress */}
+          {isActiveProject ? (
+            <div className="space-y-6 relative z-10">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* 1. Amount Collected */}
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
+                  <div>
+                    <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                      Amount Collected
+                    </span>
+                    <p className="text-2xl font-black text-white">
+                      <span className="mr-0.5">₹</span>{totalInvested.toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-gray-500 font-medium mt-3">Total Capital Secured</span>
+                </div>
 
-            {/* 2. Interest Paid Back */}
-            <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-5 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
-              <div>
-                <span className="text-[#ccff00]/80 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
-                  Interest Paid Back
-                </span>
-                <p className="text-2xl font-black text-[#ccff00]">
-                  +<span className="mr-0.5">₹</span>{totalInterest.toLocaleString('en-IN')}
-                </p>
-              </div>
-              <span className="text-[10px] text-gray-400 font-medium mt-3">
-                {project.roi}% ROI × {durationMonths} Months
-              </span>
-            </div>
+                {/* 2. Target Amount */}
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
+                  <div>
+                    <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                      Target Amount
+                    </span>
+                    <p className="text-2xl font-black text-white">
+                      <span className="text-[#ccff00] mr-0.5">₹</span>{targetAmount.toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-gray-500 font-medium mt-3">Project Investment Goal</span>
+                </div>
 
-            {/* 3. Total Amount Paid Back */}
-            <div className="bg-gradient-to-br from-[#ccff00]/15 to-transparent border border-[#ccff00]/30 rounded-2xl p-5 flex flex-col justify-between shadow-[0_0_25px_rgba(204,255,0,0.08)]">
-              <div>
-                <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] block mb-1">
-                  Total Amount Paid Back
-                </span>
-                <p className="text-3xl font-black text-white">
-                  <span className="text-[#ccff00] mr-0.5">₹</span>{totalPaidBack.toLocaleString('en-IN')}
-                </p>
+                {/* 3. Funding Progress */}
+                <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-5 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
+                  <div>
+                    <span className="text-[#ccff00]/80 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                      Funding Progress
+                    </span>
+                    <p className="text-2xl font-black text-[#ccff00]">
+                      {fundingPercent}%
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-medium mt-3">
+                    {totalInvested >= targetAmount
+                      ? 'Target Goal Reached'
+                      : `₹${Math.max(0, targetAmount - totalInvested).toLocaleString('en-IN')} Remaining`}
+                  </span>
+                </div>
               </div>
-              <span className="text-[10px] text-[#ccff00]/80 font-bold mt-3">
-                Capital + Interest Splitting
-              </span>
+
+              {/* Progress Bar for Active Projects */}
+              <div className="pt-2 space-y-2">
+                <div className="w-full h-4 bg-[#ccff00]/10 rounded-full overflow-hidden p-1 border border-[#ccff00]/20">
+                  <div
+                    className="h-full bg-[#ccff00] rounded-full shadow-[0_0_20px_rgba(204,255,0,0.4)] transition-all duration-1000 ease-out"
+                    style={{ width: `${Math.min(100, fundingPercent)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                  <span>
+                    {totalInvested >= targetAmount
+                      ? '100% Target Met'
+                      : `₹${Math.max(0, targetAmount - totalInvested).toLocaleString('en-IN')} Remaining to Target`}
+                  </span>
+                  <span className="text-[#ccff00] font-black">{fundingPercent}% Complete</span>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : isOngoingProject ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl relative z-10">
+              {/* 1. Amount Invested */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
+                <div>
+                  <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                    Amount Invested
+                  </span>
+                  <p className="text-2xl font-black text-white">
+                    <span className="mr-0.5">₹</span>{totalInvested.toLocaleString('en-IN')}
+                  </p>
+                </div>
+                <span className="text-[10px] text-gray-500 font-medium mt-3">Total Capital Secured</span>
+              </div>
+
+              {/* 2. Project Ending Date & Countdown */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
+                <div>
+                  <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                    Project Ending Date
+                  </span>
+                  <p className="text-2xl font-black text-white">
+                    {formattedEndingDate}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-medium mt-3">
+                  <span className="text-gray-500 flex items-center gap-1.5">
+                    <HiOutlineClock className="text-xs text-[#ccff00]" />
+                    Countdown
+                  </span>
+                  {countdown.hasDate && !countdown.isCompleted ? (
+                    <span className="font-mono text-[#ccff00] font-bold tracking-wider">
+                      {countdown.days}d : {String(countdown.hours).padStart(2, '0')}h : {String(countdown.minutes).padStart(2, '0')}m : {String(countdown.seconds).padStart(2, '0')}s
+                    </span>
+                  ) : (
+                    <span className="text-[#ccff00] font-bold">
+                      {countdown.isCompleted ? 'Pending Settlement' : 'N/A'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+              {/* 1. Amount Invested */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
+                <div>
+                  <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                    Amount Invested
+                  </span>
+                  <p className="text-2xl font-black text-white">
+                    <span className="mr-0.5">₹</span>{totalInvested.toLocaleString('en-IN')}
+                  </p>
+                </div>
+                <span className="text-[10px] text-gray-500 font-medium mt-3">Total Capital Secured</span>
+              </div>
+
+              {/* 2. Interest Paid Back */}
+              <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-5 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
+                <div>
+                  <span className="text-[#ccff00]/80 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                    Interest Paid Back
+                  </span>
+                  <p className="text-2xl font-black text-[#ccff00]">
+                    +<span className="mr-0.5">₹</span>{totalInterest.toLocaleString('en-IN')}
+                  </p>
+                </div>
+                <span className="text-[10px] text-gray-400 font-medium mt-3">
+                  {project.roi}% ROI × {durationMonths} Months
+                </span>
+              </div>
+
+              {/* 3. Total Amount Paid Back */}
+              <div className="bg-gradient-to-br from-[#ccff00]/15 to-transparent border border-[#ccff00]/30 rounded-2xl p-5 flex flex-col justify-between shadow-[0_0_25px_rgba(204,255,0,0.08)]">
+                <div>
+                  <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] block mb-1">
+                    Total Amount Paid Back
+                  </span>
+                  <p className="text-3xl font-black text-white">
+                    <span className="text-[#ccff00] mr-0.5">₹</span>{totalPaidBack.toLocaleString('en-IN')}
+                  </p>
+                </div>
+                <span className="text-[10px] text-[#ccff00]/80 font-bold mt-3">
+                  Capital + Interest Splitting
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Investors List & Payback Details Section */}
+      {/* Investors List Section */}
       <section className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl mb-12">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-xs font-black text-[#ccff00] uppercase tracking-[0.2em] flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse"></span>
-            Investors List & Payback Details
+            {isCompletedProject ? 'Investors List & Payback Details' : 'Investors List'}
           </h3>
           <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 font-mono text-xs font-bold">
             {investors.length} {investors.length === 1 ? 'Investor' : 'Investors'}
@@ -468,16 +659,19 @@ const ProjectDetails = () => {
             <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Loading Investor Ledger...</p>
           </div>
         ) : investors.length > 0 ? (
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse">
+          <div className="w-full overflow-x-auto custom-scrollbar pb-3">
+            <table className="w-full text-left border-collapse min-w-[1150px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02]">
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Investment Date & Time</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Amount Invested</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Total Paid Back</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Proof</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl whitespace-nowrap min-w-[240px]">Investor</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap min-w-[200px]">Transaction ID</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap min-w-[180px]">Investment Date & Time</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap min-w-[150px]">Amount Invested</th>
+                  {isCompletedProject && (
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest whitespace-nowrap min-w-[160px]">Total Paid Back</th>
+                  )}
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-center whitespace-nowrap min-w-[130px]">Status</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl whitespace-nowrap min-w-[130px]">Proof</th>
                 </tr>
               </thead>
               <tbody>
@@ -486,14 +680,14 @@ const ProjectDetails = () => {
                   const invInterest = Math.round((invCapital * Number(project.roi || 0) * durationMonths) / 100);
                   const invTotal = invCapital + (project.status === 'EXPIRED' ? 0 : invInterest);
                   const dateObj = new Date(inv.created_at || inv.createdAt);
-                  const formattedDate = !isNaN(dateObj.getTime()) 
+                  const formattedDate = !isNaN(dateObj.getTime())
                     ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                     : 'N/A';
                   const formattedTime = !isNaN(dateObj.getTime())
                     ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
                     : '';
-                  const paybackDateObj = (inv.paybackStatus === 'PAID' && (inv.updated_at || inv.updatedAt)) 
-                    ? new Date(inv.updated_at || inv.updatedAt) 
+                  const paybackDateObj = (inv.paybackStatus === 'PAID' && (inv.updated_at || inv.updatedAt))
+                    ? new Date(inv.updated_at || inv.updatedAt)
                     : null;
                   const formattedPaybackDate = (paybackDateObj && !isNaN(paybackDateObj.getTime()))
                     ? paybackDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -502,11 +696,15 @@ const ProjectDetails = () => {
                     ? paybackDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
                     : null;
                   const proofImg = inv.paybackProof || inv.paymentProof || inv.proof;
+                  const rawTxId = inv.transactionId || inv.paymentId;
+                  const displayTxId = (rawTxId && rawTxId !== '---')
+                    ? rawTxId
+                    : getDisplayTransactionId({ ...inv, transactionId: rawTxId, project });
 
                   return (
                     <tr key={inv.id || idx} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors bg-white/[0.01]">
                       {/* Investor */}
-                      <td className="py-6 px-6">
+                      <td className="py-6 px-6 whitespace-nowrap">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 text-[#ccff00] border border-[#ccff00]/20 flex items-center justify-center font-black text-sm shrink-0">
                             {inv.investor?.fullName?.[0]?.toUpperCase() || 'U'}
@@ -529,8 +727,15 @@ const ProjectDetails = () => {
                         </div>
                       </td>
 
+                      {/* Transaction ID */}
+                      <td className="py-6 px-6 whitespace-nowrap">
+                        <span className="text-zinc-300 text-xs font-mono font-medium tracking-wider whitespace-nowrap bg-white/[0.03] border border-white/5 px-2.5 py-1.5 rounded-lg inline-block">
+                          {displayTxId}
+                        </span>
+                      </td>
+
                       {/* Date & Time */}
-                      <td className="py-6 px-6">
+                      <td className="py-6 px-6 whitespace-nowrap">
                         <div className="flex flex-col gap-1">
                           <span className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs font-medium border border-white/10 shadow-inner w-fit">
                             {formattedDate}
@@ -549,24 +754,26 @@ const ProjectDetails = () => {
                       </td>
 
                       {/* Amount Invested */}
-                      <td className="py-6 px-6">
+                      <td className="py-6 px-6 whitespace-nowrap">
                         <span className="text-lg font-black text-white">
                           <span className="mr-0.5">₹</span>{invCapital.toLocaleString('en-IN')}
                         </span>
                       </td>
 
-                      {/* Paid Back & Interest Breakdown */}
-                      <td className="py-6 px-6">
-                        <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-                          <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
-                        </span>
-                        <span className="block text-[10px] text-gray-400 font-medium">
-                          (+₹{invInterest.toLocaleString('en-IN')} Interest)
-                        </span>
-                      </td>
+                      {/* Paid Back & Interest Breakdown (Only for Completed projects) */}
+                      {isCompletedProject && (
+                        <td className="py-6 px-6 whitespace-nowrap">
+                          <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
+                            <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
+                          </span>
+                          <span className="block text-[10px] text-gray-400 font-medium">
+                            (+₹{invInterest.toLocaleString('en-IN')} Interest)
+                          </span>
+                        </td>
+                      )}
 
                       {/* Status */}
-                      <td className="py-6 px-6 text-center">
+                      <td className="py-6 px-6 text-center whitespace-nowrap">
                         {inv.paybackStatus === 'PAID' ? (
                           <span className="px-3 py-1 rounded-full border border-green-500/50 bg-green-500/10 text-green-400 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap inline-flex items-center gap-1.5">
                             <HiOutlineCheckCircle className="text-xs" />
@@ -581,17 +788,17 @@ const ProjectDetails = () => {
                       </td>
 
                       {/* Proof */}
-                      <td className="py-6 px-6 text-right">
+                      <td className="py-6 px-6 text-right whitespace-nowrap">
                         {proofImg ? (
                           <div className="flex items-center justify-end gap-2">
-                            <button 
+                            <button
                               onClick={() => setSelectedImage(proofImg)}
                               className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                               title="View Proof"
                             >
                               <HiOutlineEye className="text-lg" />
                             </button>
-                            <button 
+                            <button
                               onClick={(e) => handleDownloadProof(proofImg, e)}
                               className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
                               title="Download Proof"
@@ -623,11 +830,11 @@ const ProjectDetails = () => {
 
       {/* Proof Lightbox Modal */}
       {selectedImage && (
-        <div 
+        <div
           onClick={() => setSelectedImage(null)}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-4xl max-h-[90vh] bg-[#0c0c0c] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl p-4 flex flex-col items-center"
           >
@@ -640,9 +847,9 @@ const ProjectDetails = () => {
                 <HiX className="text-lg" />
               </button>
             </div>
-            <img 
-              src={getImageUrl(selectedImage)} 
-              alt="Proof Document" 
+            <img
+              src={getImageUrl(selectedImage)}
+              alt="Proof Document"
               className="max-h-[75vh] w-auto object-contain rounded-xl"
             />
           </div>

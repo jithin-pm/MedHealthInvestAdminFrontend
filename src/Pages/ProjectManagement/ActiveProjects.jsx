@@ -472,7 +472,14 @@ const ActiveProjects = () => {
                 <div className="grid grid-cols-2 gap-y-6 mb-6 pt-2">
                   <div className="flex flex-col">
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Est. ROI</span>
-                    <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
+                      {project.roi && !isNaN(parseFloat(project.roi)) && parseFloat(project.roi) > 0 && (
+                        <span className="text-[0.65rem] font-mono font-bold text-[#ccff00] bg-[#ccff00]/10 px-1.5 py-0.5 rounded border border-[#ccff00]/20 tracking-wider">
+                          {(parseFloat(project.roi) * 12).toFixed(1).replace(/\.0$/, '')}% Per Annum
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Duration</span>
@@ -716,7 +723,7 @@ const ActiveProjects = () => {
                     <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Monthly ROI (%)</label>
                     {projectData.roi && !isNaN(parseFloat(projectData.roi)) && parseFloat(projectData.roi) > 0 && (
                       <span className="text-[0.65rem] font-mono font-bold text-[#ccff00] bg-[#ccff00]/10 px-2 py-0.5 rounded border border-[#ccff00]/20 tracking-wider">
-                        ≈ {(parseFloat(projectData.roi) * 12).toFixed(2).replace(/\.00$/, '')}% / YR
+                        ≈ {(parseFloat(projectData.roi) * 12).toFixed(2).replace(/\.00$/, '')}% Per Annum
                       </span>
                     )}
                   </div>
