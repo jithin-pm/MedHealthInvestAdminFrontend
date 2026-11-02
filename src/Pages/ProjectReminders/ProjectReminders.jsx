@@ -649,12 +649,11 @@ const ProjectReminders = () => {
               No projects match the 30-day reminder threshold. There are currently no ongoing projects completing within 30 days and no active projects with pending funding deadlines within 30 days.
             </p>
           </div>
-          {(selectedType !== 'ALL' || selectedUrgency !== 'ALL' || searchQuery || activeTab !== 'ALL') && (
+          {(selectedType !== 'ALL' || searchQuery || activeTab !== 'ALL') && (
             <button
               onClick={() => {
                 setActiveTab('ALL');
                 setSelectedType('ALL');
-                setSelectedUrgency('ALL');
                 setSearchQuery('');
               }}
               className="mt-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-[#ccff00] transition-colors border border-white/10"
