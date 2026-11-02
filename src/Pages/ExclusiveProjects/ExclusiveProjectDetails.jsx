@@ -299,6 +299,43 @@ const ExclusiveProjectDetails = () => {
         </div>
       </div>
 
+      {/* Project Presentation Media (if available) */}
+      {(projectImages.length > 0 || project.projectVideo) && (
+        <div className="mb-12">
+          <section className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <FaImage className="text-[#ccff00]" />
+              Project Presentation & Media
+            </h3>
+            <div className="flex items-center gap-4 overflow-x-auto pb-2 custom-scrollbar">
+              {projectImages.map((img, idx) => (
+                <button
+                  key={`img-${idx}`}
+                  onClick={() => setSelectedImage(img)}
+                  className="relative w-36 md:w-48 aspect-video rounded-2xl overflow-hidden border border-white/10 hover:border-[#ccff00] transition-all shrink-0 group cursor-pointer"
+                >
+                  <img src={getImageUrl(img)} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <HiOutlineEye className="text-white text-xl" />
+                  </div>
+                </button>
+              ))}
+              {project.projectVideo && (
+                <button
+                  onClick={() => setIsVideoModalOpen(true)}
+                  className="relative w-36 md:w-48 aspect-video rounded-2xl overflow-hidden border border-white/10 hover:border-[#ccff00] transition-all shrink-0 bg-white/5 flex flex-col items-center justify-center gap-2 group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black group-hover:scale-110 transition-transform">
+                    <HiOutlinePlay className="text-xl translate-x-0.5" />
+                  </div>
+                  <span className="text-[9px] font-black uppercase text-white tracking-widest">Presentation</span>
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* Top 2-Column Grid: Financial Overview & Assigned Investor */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
 
@@ -794,43 +831,6 @@ const ExclusiveProjectDetails = () => {
                   )}
                 </tbody>
               </table>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {/* Project Presentation Media (if available) */}
-      {(projectImages.length > 0 || project.projectVideo) && (
-        <div className="mb-12">
-          <section className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <FaImage className="text-[#ccff00]" />
-              Project Presentation & Media
-            </h3>
-            <div className="flex items-center gap-4 overflow-x-auto pb-2 custom-scrollbar">
-              {projectImages.map((img, idx) => (
-                <button
-                  key={`img-${idx}`}
-                  onClick={() => setSelectedImage(img)}
-                  className="relative w-36 md:w-48 aspect-video rounded-2xl overflow-hidden border border-white/10 hover:border-[#ccff00] transition-all shrink-0 group"
-                >
-                  <img src={getImageUrl(img)} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <HiOutlineEye className="text-white text-xl" />
-                  </div>
-                </button>
-              ))}
-              {project.projectVideo && (
-                <button
-                  onClick={() => setIsVideoModalOpen(true)}
-                  className="relative w-36 md:w-48 aspect-video rounded-2xl overflow-hidden border border-white/10 hover:border-[#ccff00] transition-all shrink-0 bg-white/5 flex flex-col items-center justify-center gap-2 group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00] flex items-center justify-center text-black group-hover:scale-110 transition-transform">
-                    <HiOutlinePlay className="text-xl translate-x-0.5" />
-                  </div>
-                  <span className="text-[9px] font-black uppercase text-white tracking-widest">Presentation</span>
-                </button>
-              )}
             </div>
           </section>
         </div>
