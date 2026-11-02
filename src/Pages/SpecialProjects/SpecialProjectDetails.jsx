@@ -226,8 +226,18 @@ const SpecialProjectDetails = () => {
       });
     }
 
+    // Deduplicate accruals so that only one interest row is processed per month (defense-in-depth)
+    const uniqueAccruals = [];
+    const seenAccrualMonths = new Set();
+    for (const acc of accruals) {
+      if (!seenAccrualMonths.has(acc.monthKey)) {
+        seenAccrualMonths.add(acc.monthKey);
+        uniqueAccruals.push(acc);
+      }
+    }
+
     // Process accruals and pair with matching interest payouts (same month or FIFO)
-    for (const accrual of accruals) {
+    for (const accrual of uniqueAccruals) {
       const matchedPayout = interestPayouts.find(p => p.monthKey === accrual.monthKey && !p.used) || interestPayouts.find(p => !p.used);
       if (matchedPayout) {
         matchedPayout.used = true;
@@ -391,7 +401,7 @@ const SpecialProjectDetails = () => {
                   {/* Interest Section */}
                   <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
                     <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] mb-2">Total Interest Given</span>
-                    <span className="text-white font-black text-lg">+<span className="mr-0.5">₹</span>{ledger.filter(l => l.transactionType === 'INTEREST_ACCRUED').reduce((sum, l) => sum + parseFloat(l.amount), 0).toLocaleString()}</span>
+                    <span className="text-white font-black text-lg">+<span className="mr-0.5">₹</span>{filledLedgerData.filter(g => !g.isInitial && !g.isSkipped && g.interest > 0).reduce((sum, g) => sum + parseFloat(g.interest), 0).toLocaleString()}</span>
                   </div>
 
                   <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-4 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
