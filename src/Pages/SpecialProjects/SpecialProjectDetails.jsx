@@ -903,10 +903,10 @@ const SpecialProjectDetails = () => {
                 <span className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest">
                   {paybackType === 'INTEREST'
                     ? (selectedPendingMonth?.monthLabel
-                        ? `Interest Due (${selectedPendingMonth.monthLabel})`
-                        : (pendingInterestMonths.length > 0 && pendingInterestMonths[0]?.monthLabel
-                            ? `Interest Due (${pendingInterestMonths[0].monthLabel})`
-                            : 'Interest Due'))
+                      ? `Interest Due (${selectedPendingMonth.monthLabel})`
+                      : (pendingInterestMonths.length > 0 && pendingInterestMonths[0]?.monthLabel
+                        ? `Interest Due (${pendingInterestMonths[0].monthLabel})`
+                        : 'Interest Due'))
                     : 'Capital Due'}
                 </span>
                 <span className="text-2xl font-black text-[#ccff00] tracking-tight">
@@ -1030,8 +1030,8 @@ const SpecialProjectDetails = () => {
               {(() => {
                 const rawAmount = paybackType === 'INTEREST'
                   ? (selectedPendingMonth?.dueAmount !== undefined
-                      ? selectedPendingMonth.dueAmount
-                      : (pendingInterestMonths.length > 0 ? pendingInterestMonths[0]?.dueAmount : 0))
+                    ? selectedPendingMonth.dueAmount
+                    : (pendingInterestMonths.length > 0 ? pendingInterestMonths[0]?.dueAmount : 0))
                   : (paybackAmount || 0);
 
                 const amountToSettle = parseFloat(rawAmount) || 0;
