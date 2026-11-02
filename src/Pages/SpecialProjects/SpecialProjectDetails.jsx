@@ -157,14 +157,14 @@ const SpecialProjectDetails = () => {
   };
 
   const getConsolidatedLedgerData = () => {
-    if (!ledger || ledger.length === 0) return [];
+    if (!investment && (!ledger || ledger.length === 0)) return [];
 
     const interestPayouts = [];
     const capitalPayouts = [];
     const accruals = [];
 
     // Separate payouts and accruals
-    for (const entry of ledger) {
+    for (const entry of (ledger || [])) {
       const date = new Date(entry.transactionDate);
       const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
 
@@ -205,9 +205,10 @@ const SpecialProjectDetails = () => {
     const rows = [];
 
     // Add Grace Period row for the month following investment (cooling period)
-    if (investment && (investment.created_at || investment.createdAt)) {
-      const invDate = new Date(investment.created_at || investment.createdAt);
-      const graceDate = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
+    const invDateStr = investment?.created_at || investment?.createdAt || project?.ongoingStartDate || project?.created_at;
+    if (invDateStr) {
+      const invDate = new Date(invDateStr);
+      const graceDate = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1, 12, 0, 0);
       const graceMonthKey = `${graceDate.getFullYear()}-${graceDate.getMonth()}`;
       rows.push({
         id: 'grace-period',
@@ -610,7 +611,7 @@ const SpecialProjectDetails = () => {
                       return (
                         <tr key={group.id} className="border-b border-white/5 hover:bg-[#ccff00]/[0.05] transition-colors bg-[#ccff00]/[0.02]">
                           <td className="py-4 px-6">
-                            {isInterestRow ? (
+                            {isInterestRow || group.isSkipped ? (
                               <span className="text-sm font-bold text-white uppercase tracking-widest">
                                 {displayDateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                               </span>
@@ -626,6 +627,15 @@ const SpecialProjectDetails = () => {
                                 </span>
                                 <span className="text-[11px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
                                   {paidDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                </span>
+                              </div>
+                            ) : group.isSkipped ? (
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-white/90 whitespace-nowrap">
+                                  {displayDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                                <span className="text-[11px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
+                                  Grace Period Month
                                 </span>
                               </div>
                             ) : (
