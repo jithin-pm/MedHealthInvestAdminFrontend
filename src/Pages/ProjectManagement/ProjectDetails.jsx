@@ -6,20 +6,20 @@ import {
   HiOutlineCurrencyRupee,
   HiOutlineChevronLeft,
   HiOutlineStar,
-  HiOutlineChartBar,
   HiOutlineTag,
   HiOutlineUser,
   HiOutlinePhone,
   HiX,
   HiOutlineCheckCircle,
   HiOutlineInformationCircle,
-  HiOutlineMail,
-  HiOutlinePlay
+  HiOutlinePlay,
+  HiOutlineEye,
+  HiOutlineDownload
 } from 'react-icons/hi';
 import { FaImage } from 'react-icons/fa';
 import { LuCrown } from 'react-icons/lu';
 import { BASE_URL } from '../../services/baseUrl';
-import { getProjectByIdApi, getProjectInvestorsApi, editProjectApi } from '../../services/allApi';
+import { getProjectByIdApi, getProjectInvestorsApi } from '../../services/allApi';
 import Swal from 'sweetalert2';
 import { generateProjectStatement } from '../../Utils/generateStatement';
 import { getErrorMessage, getErrorTitle } from '../../Utils/getErrorMessage';
@@ -41,13 +41,9 @@ const ProjectDetails = () => {
   }, [project, location.pathname, id, navigate]);
 
   // Investor List State
-  const [isInvestorModalOpen, setIsInvestorModalOpen] = React.useState(false);
   const [investors, setInvestors] = React.useState([]);
   const [isLoadingInvestors, setIsLoadingInvestors] = React.useState(false);
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 5;
+  const [selectedImage, setSelectedImage] = React.useState(null);
 
   // User Info Modal State
   const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
@@ -58,7 +54,6 @@ const ProjectDetails = () => {
   const fetchInvestors = async () => {
     if (!id) return;
     setIsLoadingInvestors(true);
-    setCurrentPage(1); // Reset to first page
     try {
       const res = await getProjectInvestorsApi(id);
       if (res.status === 200) {
@@ -71,15 +66,6 @@ const ProjectDetails = () => {
     }
   };
 
-  // Pagination Logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedInvestors = investors.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(investors.length / itemsPerPage);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
   const fetchProject = async () => {
     if (!id) return;
     setLoading(true);
@@ -109,7 +95,6 @@ const ProjectDetails = () => {
     });
 
     try {
-      // Ensure we have latest investors
       const res = await getProjectInvestorsApi(id);
       if (res.status === 200) {
         const investorList = res.data.investments || [];
@@ -134,13 +119,40 @@ const ProjectDetails = () => {
 
   React.useEffect(() => {
     fetchProject();
+    fetchInvestors();
   }, [id]);
-
 
   const getImageUrl = (img) => {
     if (!img) return 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=800&auto=format&fit=crop';
     if (img?.startsWith('http')) return img;
-    return `${BASE_URL}/${img?.replace(/\\/g, '/')}`;
+    const cleanPath = String(img).replace(/\\/g, '/').replace(/^\/+/, '');
+    return `${BASE_URL}/${cleanPath}`;
+  };
+
+  const handleDownloadProof = async (imgPath, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const fullUrl = getImageUrl(imgPath);
+    if (!fullUrl) return;
+
+    try {
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `proof-${Date.now()}.${imgPath.split('.').pop() || 'jpg'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      window.open(fullUrl, '_blank');
+    }
   };
 
   const projectImages = React.useMemo(() => {
@@ -183,6 +195,11 @@ const ProjectDetails = () => {
       </div>
     );
   }
+
+  const durationMonths = Number(project.duration || 1);
+  const totalInvested = investors.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0) || Number(project.collectedAmount || 0);
+  const totalInterest = Math.round((totalInvested * Number(project.roi || 0) * durationMonths) / 100);
+  const totalPaidBack = totalInvested + (project.status === 'EXPIRED' ? 0 : totalInterest);
 
   return (
     <div className="min-h-screen bg-black p-4 md:p-8 lg:p-12 font-['Inter']">
@@ -270,7 +287,6 @@ const ProjectDetails = () => {
                   </div>
                   <span className="text-[10px] font-black text-white uppercase tracking-widest">Watch Presentation</span>
                 </div>
-                {/* Optional: Small preview if we could get a frame, but for now just the icon is clean */}
               </button>
             )}
           </section>
@@ -281,14 +297,14 @@ const ProjectDetails = () => {
           {[
             { label: 'Target ROI', value: `${project.roi}%`, icon: HiOutlineTrendingUp, color: 'text-[#ccff00]' },
             { label: 'Duration', value: `${project.duration} Months`, icon: HiOutlineClock, color: 'text-blue-400' },
-            { label: 'Target Amount', value: `₹\u2009${Number(project.targetAmount).toLocaleString('en-IN')}`, icon: HiOutlineCurrencyRupee, color: 'text-purple-400' },
+            { label: 'Target Amount', value: `₹\u2009${Number(project.targetAmount).toLocaleString('en-IN')}`, icon: HiOutlineCurrencyRupee, color: 'text-[#ccff00]', isTargetAmount: true },
           ].map((stat, i) => (
             <div key={i} className="bg-[#0c0c0c] border border-white/5 py-4 px-5 rounded-2xl hover:border-white/10 transition-colors group">
               <div className={`p-2 rounded-xl bg-white/[0.03] w-fit mb-2.5 group-hover:scale-105 transition-transform`}>
                 <stat.icon className={`text-xl ${stat.color}`} />
               </div>
               <p className="text-[0.65rem] text-gray-500 font-bold uppercase tracking-[0.15em] mb-0.5">{stat.label}</p>
-              <p className="text-xl font-black text-white">{stat.value}</p>
+              <p className={`text-xl font-black ${stat.isTargetAmount ? 'text-[#ccff00]' : 'text-white'}`}>{stat.value}</p>
             </div>
           ))}
         </div>
@@ -349,231 +365,286 @@ const ProjectDetails = () => {
         </section>
       )}
 
-      {/* Funding Analysis Full Row */}
-      <section>
-        <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3 uppercase">
-          <HiOutlineChartBar className="text-[#ccff00]" />
-          Funding Progress
-        </h2>
-        <div className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-10 md:p-14 relative overflow-hidden group">
-          {/* Subtle Background Glow */}
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#ccff00]/5 rounded-full blur-[100px] pointer-events-none" />
+      {/* Financial Overview & Amount Breakdown */}
+      <section className="mb-12">
+        <div className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden shadow-2xl group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#ccff00]/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
-          <div className="relative z-10">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-10">
-              <div className="space-y-2">
-                <p className="text-[0.7rem] text-gray-500 font-bold uppercase tracking-[0.3em]">Capital Secured</p>
-                <p className="text-5xl md:text-7xl font-black text-[#ccff00] ">
-                  <span className="mr-0.5">₹</span>{Number(project.collectedAmount || 0).toLocaleString('en-IN')}
-                </p>
-              </div>
-              <div className="text-left md:text-right space-y-2">
-                <p className="text-[0.7rem] text-gray-500 font-bold uppercase tracking-[0.3em]">Investment Goal</p>
-                <p className="text-2xl md:text-4xl font-bold text-white"><span className="mr-1">₹</span>{Number(project.targetAmount).toLocaleString('en-IN')}</p>
-              </div>
+          {/* Section Header with Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
+            <div>
+              <h3 className="text-xs font-black text-[#ccff00] uppercase tracking-[0.2em] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse"></span>
+                Financial Overview & Payback Breakdown
+              </h3>
+              <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest mt-1">
+                Project Investment & Settlement Ledger
+              </p>
             </div>
 
-            <div className="w-full h-5 bg-[#ccff00]/10 rounded-full overflow-hidden mb-6 p-1 border border-[#ccff00]/20">
-              <div
-                className="h-full bg-[#ccff00] rounded-full shadow-[0_0_30px_rgba(204,255,0,0.3)] transition-all duration-1500 ease-out"
-                style={{ width: `${Math.min(100, (Number(project.collectedAmount || 0) / Number(project.targetAmount || 1)) * 100)}%` }}
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-[0.7rem] font-black uppercase tracking-[0.25em]">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                <span className="text-white">
-                  {Math.round((Number(project.collectedAmount || 0) / Number(project.targetAmount || 1)) * 100)}% Complete
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-12 pt-10 border-t border-white/5 flex flex-wrap gap-4">
-
+            <div className="flex flex-wrap items-center gap-3">
               {(project.status === 'ONGOING' || project.status === 'EXPIRED') && (
                 <button 
                   onClick={() => navigate(project.projectType === 'Exclusive' ? `/dashboard/exclusive-projects/settlement/${id}` : `/dashboard/projects/settlement/${id}`)}
-                  className="px-8 py-4 rounded-2xl bg-white hover:bg-gray-200 text-black font-black text-[0.7rem] tracking-[0.2em] uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                  className="px-6 py-3 rounded-xl bg-white hover:bg-gray-200 text-black font-black text-xs tracking-wider uppercase transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 cursor-pointer"
                 >
-                  <HiOutlineCheckCircle className="text-lg" />
+                  <HiOutlineCheckCircle className="text-base" />
                   {project.status === 'EXPIRED' ? 'Process Refunds' : 'Mark as Completed'}
                 </button>
               )}
               <button 
                 onClick={handleDownloadStatement}
-                className="px-8 py-4 rounded-2xl bg-[#ccff00] hover:bg-[#b3ff00] text-black font-black text-[0.7rem] tracking-[0.2em] uppercase shadow-[0_0_30px_rgba(204,205,0,0.15)] transition-all flex items-center gap-3"
+                className="px-6 py-3 rounded-xl bg-[#ccff00] hover:bg-[#b3ff00] text-black font-black text-xs tracking-wider uppercase shadow-[0_0_25px_rgba(204,255,0,0.15)] transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
               >
-                <HiOutlineTag className="text-lg" />
+                <HiOutlineTag className="text-base" />
                 Download Statement
               </button>
+            </div>
+          </div>
 
+          {/* Financial Breakdown Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+            {/* 1. Amount Invested */}
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
+              <div>
+                <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                  Amount Invested
+                </span>
+                <p className="text-2xl font-black text-white">
+                  <span className="mr-0.5">₹</span>{totalInvested.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <span className="text-[10px] text-gray-500 font-medium mt-3">Total Capital Secured</span>
+            </div>
 
-              <button
-                onClick={() => {
-                  setIsInvestorModalOpen(true);
-                  fetchInvestors();
-                }}
-                className="px-8 py-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] text-white font-bold text-[0.7rem] tracking-[0.2em] uppercase transition-all flex items-center gap-3"
-              >
-                <HiOutlineStar className="text-lg text-[#ccff00]" />
-                Investor List
-              </button>
+            {/* 2. Interest Paid Back */}
+            <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-5 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
+              <div>
+                <span className="text-[#ccff00]/80 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
+                  Interest Paid Back
+                </span>
+                <p className="text-2xl font-black text-[#ccff00]">
+                  +<span className="mr-0.5">₹</span>{totalInterest.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <span className="text-[10px] text-gray-400 font-medium mt-3">
+                {project.roi}% ROI × {durationMonths} Months
+              </span>
+            </div>
+
+            {/* 3. Total Amount Paid Back */}
+            <div className="bg-gradient-to-br from-[#ccff00]/15 to-transparent border border-[#ccff00]/30 rounded-2xl p-5 flex flex-col justify-between shadow-[0_0_25px_rgba(204,255,0,0.08)]">
+              <div>
+                <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] block mb-1">
+                  Total Amount Paid Back
+                </span>
+                <p className="text-3xl font-black text-white">
+                  <span className="text-[#ccff00] mr-0.5">₹</span>{totalPaidBack.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <span className="text-[10px] text-[#ccff00]/80 font-bold mt-3">
+                Capital + Interest Splitting
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Investor List Modal */}
-      {isInvestorModalOpen && (
-        <div className="fixed inset-0 lg:left-[280px] z-[40] bg-[#0c0c0c] flex flex-col animate-in fade-in duration-300">
-          {/* Header */}
-          <div className="flex items-center justify-between p-8 md:p-12 border-b border-white/5 bg-black/20">
-            <div>
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-12 h-12 rounded-2xl bg-[#ccff00]/10 flex items-center justify-center text-[#ccff00]">
-                  <HiOutlineStar className="text-2xl" />
-                </div>
-                <h2 className="text-3xl font-black text-white  uppercase">Project Investors</h2>
-              </div>
-              <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em]">
-                {project?.projectName} • Total Capital Secured: <span className="text-white"><span className="mr-0.5">₹</span>{Number(project?.collectedAmount).toLocaleString()}</span>
-              </p>
-            </div>
-            <button
-              onClick={() => setIsInvestorModalOpen(false)}
-              className="w-14 h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all border border-white/10"
-            >
-              <HiX className="text-2xl" />
-            </button>
-          </div>
+      {/* Investors List & Payback Details Section */}
+      <section className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl mb-12">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xs font-black text-[#ccff00] uppercase tracking-[0.2em] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse"></span>
+            Investors List & Payback Details
+          </h3>
+          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 font-mono text-xs font-bold">
+            {investors.length} {investors.length === 1 ? 'Investor' : 'Investors'}
+          </span>
+        </div>
 
-          {/* Table Header (Fixed) */}
-          <div className="px-8 md:px-12 py-6 bg-black/40 border-b border-white/5">
-            <div className="grid grid-cols-5 text-[13px] font-black uppercase text-gray-600">
-              <div className="col-span-2">Investor Identity</div>
-              <div>Primary Contact</div>
-              <div className="text-right">Allocation</div>
-              <div className="text-right">Transaction Details</div>
-            </div>
+        {isLoadingInvestors ? (
+          <div className="py-16 flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 border-4 border-[#ccff00]/20 border-t-[#ccff00] rounded-full animate-spin" />
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Loading Investor Ledger...</p>
           </div>
+        ) : investors.length > 0 ? (
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.02]">
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Investment Date & Time</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Amount Invested</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Total Paid Back</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Proof</th>
+                </tr>
+              </thead>
+              <tbody>
+                {investors.map((inv, idx) => {
+                  const invCapital = parseFloat(inv.amount || 0);
+                  const invInterest = Math.round((invCapital * Number(project.roi || 0) * durationMonths) / 100);
+                  const invTotal = invCapital + (project.status === 'EXPIRED' ? 0 : invInterest);
+                  const dateObj = new Date(inv.created_at || inv.createdAt);
+                  const formattedDate = !isNaN(dateObj.getTime()) 
+                    ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    : 'N/A';
+                  const formattedTime = !isNaN(dateObj.getTime())
+                    ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                    : '';
+                  const paybackDateObj = (inv.paybackStatus === 'PAID' && (inv.updated_at || inv.updatedAt)) 
+                    ? new Date(inv.updated_at || inv.updatedAt) 
+                    : null;
+                  const formattedPaybackDate = (paybackDateObj && !isNaN(paybackDateObj.getTime()))
+                    ? paybackDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    : null;
+                  const formattedPaybackTime = (paybackDateObj && !isNaN(paybackDateObj.getTime()))
+                    ? paybackDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                    : null;
+                  const proofImg = inv.paybackProof || inv.paymentProof || inv.proof;
 
-          <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
-            {isLoadingInvestors ? (
-              <div className="h-full flex flex-col items-center justify-center gap-6">
-                <div className="w-12 h-12 border-4 border-[#ccff00]/20 border-t-[#ccff00] rounded-full animate-spin" />
-                <p className="text-gray-600 text-xs font-black uppercase tracking-[0.4em] animate-pulse">Syncing Institutional Ledger...</p>
-              </div>
-            ) : investors.length > 0 ? (
-              <div className="space-y-4 max-w-7xl mx-auto">
-                {paginatedInvestors.map((inv, idx) => (
-                  <div key={idx} className="grid grid-cols-5 items-center p-8 bg-white/[0.02] border border-white/[0.05] rounded-[2rem]  group">
-                    <div className="col-span-2 flex items-center gap-6">
-                      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 ">
-                        <HiOutlineUser className="text-2xl" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xl font-bold text-white ">{inv.investor?.fullName || 'Unknown User'}</p>
-                          {(inv.investor?.customUserId || inv.investor?.id) && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20">
-                              {inv.investor?.customUserId || `MHI2026${String(inv.investor?.id).padStart(2, '0')}`}
+                  return (
+                    <tr key={inv.id || idx} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors bg-white/[0.01]">
+                      {/* Investor */}
+                      <td className="py-6 px-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 text-[#ccff00] border border-[#ccff00]/20 flex items-center justify-center font-black text-sm shrink-0">
+                            {inv.investor?.fullName?.[0]?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white truncate max-w-[200px]">
+                              {inv.investor?.fullName || 'Unknown User'}
+                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="px-1.5 py-0.5 rounded text-[0.65rem] font-mono font-semibold bg-[#ccff00]/10 text-[#ccff00] border border-[#ccff00]/20 tracking-wider">
+                                {inv.investor?.customUserId || `MHI2026${String(inv.investor?.id || inv.userId || idx).padStart(2, '0')}`}
+                              </span>
+                              {inv.investor?.mobileNumber && (
+                                <span className="text-[11px] text-gray-500 font-medium">
+                                  {inv.investor.mobileNumber}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Date & Time */}
+                      <td className="py-6 px-6">
+                        <div className="flex flex-col gap-1">
+                          <span className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs font-medium border border-white/10 shadow-inner w-fit">
+                            {formattedDate}
+                          </span>
+                          {formattedTime && (
+                            <span className="text-[10px] font-mono text-gray-400 pl-1">
+                              {formattedTime}
+                            </span>
+                          )}
+                          {formattedPaybackDate && (
+                            <span className="text-[10px] text-[#ccff00] font-semibold pl-1">
+                              Paid: {formattedPaybackDate} {formattedPaybackTime}
                             </span>
                           )}
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">{inv.investor?.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-3 text-gray-400 font-medium">
-                        <HiOutlinePhone className="text-[#ccff00] text-sm" />
-                        <span>{inv.investor?.mobileNumber || 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-semibold text-white "><span className="mr-1">₹</span>{Number(inv.amount).toLocaleString('en-IN')}</p>
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <p className="text-sm font-bold text-white">
-                        {new Date(inv.created_at).toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </p>
-                      <p className="text-[10px] text-[#ccff00] font-black uppercase tracking-widest">
-                        {new Date(inv.created_at).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center gap-6 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center">
-                  <HiOutlineUser className="text-4xl text-gray-800" />
-                </div>
-                <p className="text-gray-600 text-xs font-black uppercase tracking-[0.4em]">No institutional records found</p>
-              </div>
-            )}
+                      </td>
+
+                      {/* Amount Invested */}
+                      <td className="py-6 px-6">
+                        <span className="text-lg font-black text-white">
+                          <span className="mr-0.5">₹</span>{invCapital.toLocaleString('en-IN')}
+                        </span>
+                      </td>
+
+                      {/* Paid Back & Interest Breakdown */}
+                      <td className="py-6 px-6">
+                        <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
+                          <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
+                        </span>
+                        <span className="block text-[10px] text-gray-400 font-medium">
+                          (+₹{invInterest.toLocaleString('en-IN')} Interest)
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-6 px-6 text-center">
+                        {inv.paybackStatus === 'PAID' ? (
+                          <span className="px-3 py-1 rounded-full border border-green-500/50 bg-green-500/10 text-green-400 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap inline-flex items-center gap-1.5">
+                            <HiOutlineCheckCircle className="text-xs" />
+                            Paid Back
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap inline-flex items-center gap-1.5">
+                            <HiOutlineClock className="text-xs" />
+                            Pending
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Proof */}
+                      <td className="py-6 px-6 text-right">
+                        {proofImg ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => setSelectedImage(proofImg)}
+                              className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
+                              title="View Proof"
+                            >
+                              <HiOutlineEye className="text-lg" />
+                            </button>
+                            <button 
+                              onClick={(e) => handleDownloadProof(proofImg, e)}
+                              className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
+                              title="Download Proof"
+                            >
+                              <HiOutlineDownload className="text-lg" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-xs font-medium italic bg-white/5 px-3 py-1.5 rounded-lg">
+                            No Proof Attached
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+        ) : (
+          <div className="py-16 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-white/5 rounded-3xl bg-white/[0.01]">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-500">
+              <HiOutlineUser className="text-3xl" />
+            </div>
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">No Investor Records Found</p>
+          </div>
+        )}
+      </section>
 
-          <div className="p-8 md:p-12 pb-16 md:pb-20 border-t border-white/5 bg-black/40 flex flex-col items-center justify-center gap-8">
-            {/* Pagination Controls */}
-            {totalPages > 1 ? (
-              <div className="flex flex-col items-center gap-6 w-full">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] disabled:opacity-10 disabled:cursor-not-allowed hover:bg-white/10 transition-all active:scale-95 flex items-center gap-3 group"
-                  >
-                    <HiOutlineChevronLeft className="text-lg group-hover:-translate-x-1 transition-transform" />
-                    Previous Allocation
-                  </button>
-
-                  <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-[1.25rem] border border-white/10">
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handlePageChange(i + 1)}
-                        className={`w-11 h-11 rounded-xl text-[10px] font-black transition-all duration-300 active:scale-90 ${currentPage === i + 1
-                            ? 'bg-[#ccff00] text-black shadow-[0_0_30px_rgba(204,255,0,0.4)]'
-                            : 'text-gray-500 hover:text-white hover:bg-white/5'
-                          }`}
-                      >
-                        {String(i + 1).padStart(2, '0')}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] disabled:opacity-10 disabled:cursor-not-allowed hover:bg-white/10 transition-all active:scale-95 flex items-center gap-3 group"
-                  >
-                    Next Allocation
-                    <HiOutlineChevronLeft className="text-lg rotate-180 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between w-full mt-4">
-                   <div className="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] flex items-center gap-4">
-                      <div className="h-[1px] w-12 bg-white/10" />
-                      Audit Registry Page {currentPage} of {totalPages}
-                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="w-full flex items-center justify-between">
-                <div className="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em]">
-                  Registry Audit Complete • {investors.length} Record{investors.length !== 1 ? 's' : ''} Verified
-                </div>
-              </div>
-            )}
+      {/* Proof Lightbox Modal */}
+      {selectedImage && (
+        <div 
+          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl max-h-[90vh] bg-[#0c0c0c] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl p-4 flex flex-col items-center"
+          >
+            <div className="w-full flex items-center justify-between pb-4 border-b border-white/5 mb-4 px-2">
+              <span className="text-xs font-black uppercase tracking-widest text-[#ccff00]">Proof Verification Document</span>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+              >
+                <HiX className="text-lg" />
+              </button>
+            </div>
+            <img 
+              src={getImageUrl(selectedImage)} 
+              alt="Proof Document" 
+              className="max-h-[75vh] w-auto object-contain rounded-xl"
+            />
           </div>
         </div>
       )}
