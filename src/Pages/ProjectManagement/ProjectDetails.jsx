@@ -83,7 +83,7 @@ const ProjectDetails = () => {
 
   const handleDownloadStatement = async () => {
     if (!project) return;
-    
+
     Swal.fire({
       title: 'Preparing Statement',
       text: 'Compiling institutional audit records...',
@@ -384,7 +384,7 @@ const ProjectDetails = () => {
 
             <div className="flex flex-wrap items-center gap-3">
               {(project.status === 'ONGOING' || project.status === 'EXPIRED') && (
-                <button 
+                <button
                   onClick={() => navigate(project.projectType === 'Exclusive' ? `/dashboard/exclusive-projects/settlement/${id}` : `/dashboard/projects/settlement/${id}`)}
                   className="px-6 py-3 rounded-xl bg-white hover:bg-gray-200 text-black font-black text-xs tracking-wider uppercase transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 cursor-pointer"
                 >
@@ -392,7 +392,7 @@ const ProjectDetails = () => {
                   {project.status === 'EXPIRED' ? 'Process Refunds' : 'Mark as Completed'}
                 </button>
               )}
-              <button 
+              <button
                 onClick={handleDownloadStatement}
                 className="px-6 py-3 rounded-xl bg-[#ccff00] hover:bg-[#b3ff00] text-black font-black text-xs tracking-wider uppercase shadow-[0_0_25px_rgba(204,255,0,0.15)] transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
               >
@@ -743,15 +743,15 @@ const ProjectDetails = () => {
       {isVideoModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pointer-events-none">
           <div className="relative w-full max-w-5xl aspect-video rounded-[2.5rem] overflow-hidden pointer-events-auto animate-in zoom-in duration-300">
-            <button 
+            <button
               onClick={() => setIsVideoModalOpen(false)}
               className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-10 backdrop-blur-md border border-white/10"
             >
               <HiX className="text-2xl" />
             </button>
-            <video 
-              src={getImageUrl(project.projectVideo)} 
-              controls 
+            <video
+              src={getImageUrl(project.projectVideo)}
+              controls
               autoPlay
               className="w-full h-full object-contain"
             />

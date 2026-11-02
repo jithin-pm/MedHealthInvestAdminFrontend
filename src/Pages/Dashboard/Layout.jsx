@@ -188,7 +188,8 @@ const DashboardLayout = () => {
     };
     window.addEventListener('enquiriesUpdated', handleUpdate);
 
-    const interval = setInterval(fetchUnreadCounts, 15000);
+    // Poll every 2 minutes instead of 15 seconds to stay well below Hostinger's 500 connections/hr limit
+    const interval = setInterval(fetchUnreadCounts, 120000);
 
     return () => {
       window.removeEventListener('enquiriesUpdated', handleUpdate);
