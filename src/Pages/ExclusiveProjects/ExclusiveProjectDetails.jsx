@@ -387,7 +387,7 @@ const ExclusiveProjectDetails = () => {
                 Investment Breakdown
               </p>
               <div className="space-y-3 bg-white/[0.02] p-4 rounded-xl border border-white/5">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                <div className={`grid grid-cols-1 ${isProjectCompleted ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3 mt-2`}>
                   <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
                     <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] mb-2">Capital Invested</span>
                     <span className="text-white font-black text-lg"><span className="mr-0.5">₹</span>{capitalInvested.toLocaleString('en-IN')}</span>
@@ -398,10 +398,12 @@ const ExclusiveProjectDetails = () => {
                     <span className="text-[#ccff00] font-black text-lg">+<span className="mr-0.5">₹</span>{estReturns.toLocaleString('en-IN')}</span>
                   </div>
 
-                  <div className="bg-white/[0.05] border border-[#ccff00]/30 rounded-2xl p-4 flex flex-col justify-between bg-gradient-to-br from-[#ccff00]/10 to-transparent">
-                    <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] mb-2">Capital + Interest</span>
-                    <span className="text-white font-black text-lg"><span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}</span>
-                  </div>
+                  {isProjectCompleted && (
+                    <div className="bg-white/[0.05] border border-[#ccff00]/30 rounded-2xl p-4 flex flex-col justify-between bg-gradient-to-br from-[#ccff00]/10 to-transparent">
+                      <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] mb-2">Capital + Interest</span>
+                      <span className="text-white font-black text-lg"><span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -530,7 +532,9 @@ const ExclusiveProjectDetails = () => {
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Investment Date</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Amount Invested</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (ROI)</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Capital + Interest</th>
+                  {isProjectCompleted && (
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Capital + Interest</th>
+                  )}
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                 </tr>
               </thead>
@@ -574,14 +578,16 @@ const ExclusiveProjectDetails = () => {
                             {project.roi}%
                           </span>
                         </td>
-                        <td className="py-6 px-6">
-                          <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-                            <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
-                          </span>
-                          <span className="block text-[10px] text-gray-400 font-medium">
-                            (+₹{invInterest.toLocaleString('en-IN')})
-                          </span>
-                        </td>
+                        {isProjectCompleted && (
+                          <td className="py-6 px-6">
+                            <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
+                              <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
+                            </span>
+                            <span className="block text-[10px] text-gray-400 font-medium">
+                              (+₹{invInterest.toLocaleString('en-IN')})
+                            </span>
+                          </td>
+                        )}
                         <td className="py-6 px-6 text-right">
                           {invProof ? (
                             <div className="flex items-center justify-end gap-2">
@@ -632,14 +638,16 @@ const ExclusiveProjectDetails = () => {
                         {project.roi}%
                       </span>
                     </td>
-                    <td className="py-6 px-6">
-                      <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-                        <span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}
-                      </span>
-                      <span className="block text-[10px] text-gray-400 font-medium">
-                        (+₹{estReturns.toLocaleString('en-IN')})
-                      </span>
-                    </td>
+                    {isProjectCompleted && (
+                      <td className="py-6 px-6">
+                        <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
+                          <span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}
+                        </span>
+                        <span className="block text-[10px] text-gray-400 font-medium">
+                          (+₹{estReturns.toLocaleString('en-IN')})
+                        </span>
+                      </td>
+                    )}
                     <td className="py-6 px-6 text-right">
                       {proofAttachment ? (
                         <div className="flex items-center justify-end gap-2">
