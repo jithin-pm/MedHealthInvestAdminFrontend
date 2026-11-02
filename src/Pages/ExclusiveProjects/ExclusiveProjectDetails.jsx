@@ -633,115 +633,27 @@ const ExclusiveProjectDetails = () => {
         </section>
       </div>
 
-      {/* Paid Back / Settlement Details Section (For Completed Exclusive Projects) */}
+      {/* Paid Back Data Section (For Completed Exclusive Projects) */}
       {isProjectCompleted && (
         <div className="mb-12">
-          <section className="bg-[#0c0c0c] border border-[#ccff00]/30 rounded-[2.5rem] p-8 overflow-hidden shadow-[0_0_40px_rgba(204,255,0,0.06)] relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#ccff00]/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#ccff00]/10 border border-[#ccff00]/25 flex items-center justify-center text-[#ccff00] shadow-sm">
-                  <HiOutlineCheckCircle className="text-2xl" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-[#ccff00] uppercase tracking-[0.2em] flex items-center gap-2">
-                    Paid Back Settlement & Amount Breakdown
-                  </h3>
-                  <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest mt-0.5">
-                    Investor Payout Completed • Institutional Audit Record
-                  </p>
-                </div>
-              </div>
-
-              {payoutTransaction?.transactionId && (
-                <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-mono text-[10px] font-bold tracking-wider self-start sm:self-auto">
-                  <span className="text-gray-500 uppercase mr-1.5">TX ID:</span>
-                  <span className="text-[#ccff00]">{payoutTransaction.transactionId}</span>
-                </div>
-              )}
+          <section className="bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xs font-black text-[#ccff00] uppercase tracking-[0.2em] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse"></span>
+                Paid Back Data
+              </h3>
             </div>
 
-            {/* Amount Breakdown Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 relative z-10">
-              {/* Capital Paid Back */}
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
-                <div>
-                  <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
-                    Capital Paid Back
-                  </span>
-                  <p className="text-2xl font-black text-white">
-                    <span className="mr-0.5">₹</span>{capitalInvested.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <span className="text-[10px] text-gray-500 font-medium mt-3">Principal returned in full</span>
-              </div>
-
-              {/* Interest Paid Back */}
-              <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-5 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
-                <div>
-                  <span className="text-[#ccff00]/80 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
-                    Interest Paid Back
-                  </span>
-                  <p className="text-2xl font-black text-[#ccff00]">
-                    +<span className="mr-0.5">₹</span>{estReturns.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <span className="text-[10px] text-gray-400 font-medium mt-3">
-                  {project.roi}% ROI × {durationMonths} Months
-                </span>
-              </div>
-
-              {/* Total Paid Back */}
-              <div className="bg-gradient-to-br from-[#ccff00]/15 to-transparent border border-[#ccff00]/30 rounded-2xl p-5 flex flex-col justify-between shadow-[0_0_25px_rgba(204,255,0,0.08)]">
-                <div>
-                  <span className="text-[#ccff00] font-black uppercase tracking-widest text-[0.65rem] block mb-1">
-                    Total Paid Back
-                  </span>
-                  <p className="text-3xl font-black text-white">
-                    <span className="text-[#ccff00] mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <span className="text-[10px] text-[#ccff00]/80 font-bold mt-3">
-                  Capital + Full Yield Transferred
-                </span>
-              </div>
-
-              {/* Paid Back Date */}
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
-                <div>
-                  <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] block mb-1">
-                    Paid Back Date
-                  </span>
-                  <p className="text-lg font-bold text-white whitespace-nowrap">
-                    {formatDateTime(settlementDateVal).date}
-                  </p>
-                  {formatDateTime(settlementDateVal).time && (
-                    <span className="text-[11px] font-mono text-gray-400 block mt-0.5">
-                      {formatDateTime(settlementDateVal).time}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] text-green-400 font-medium flex items-center gap-1 mt-3">
-                  <HiOutlineCheckCircle className="text-xs" />
-                  Transfer Completed
-                </span>
-              </div>
-            </div>
-
-            {/* Paid Back Settlement Table */}
-            <div className="overflow-x-auto custom-scrollbar relative z-10">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-white/10 bg-[#ccff00]/[0.03]">
+                  <tr className="border-b border-white/10 bg-white/[0.02]">
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Paid Back Date</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right">Capital Paid</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right">Interest Paid</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest text-right">Total Paid Back</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Proof Document</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Capital Paid</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (ROI)</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Capital + Interest</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -754,10 +666,9 @@ const ExclusiveProjectDetails = () => {
                       const invTotal = parseFloat(payoutTransaction?.amount || (invCapital + invInterest));
                       const invDateVal = inv.updated_at || inv.updatedAt || payoutTransaction?.transactionDate || project.completionDate || project.updated_at;
                       const invProof = inv.paybackProof || payoutTransaction?.paybackProof || settlementProof;
-                      const { date: invDateFormatted, time: invTimeFormatted } = formatDateTime(invDateVal);
 
                       return (
-                        <tr key={inv.id || idx} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors bg-[#ccff00]/[0.01]">
+                        <tr key={inv.id || idx} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors bg-white/[0.01]">
                           <td className="py-6 px-6">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 text-[#ccff00] border border-[#ccff00]/20 flex items-center justify-center font-black text-sm shrink-0">
@@ -772,39 +683,26 @@ const ExclusiveProjectDetails = () => {
                             </div>
                           </td>
                           <td className="py-6 px-6">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-white whitespace-nowrap">
-                                {invDateFormatted}
-                              </span>
-                              {invTimeFormatted && (
-                                <span className="text-[10px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
-                                  {invTimeFormatted}
-                                </span>
-                              )}
-                            </div>
+                            <span className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs font-medium border border-white/10 shadow-inner">
+                              {formatDisplayDate(invDateVal)}
+                            </span>
                           </td>
-                          <td className="py-6 px-6 text-right">
-                            <span className="text-sm font-bold text-white">
+                          <td className="py-6 px-6">
+                            <span className="text-lg font-black text-white">
                               <span className="mr-0.5">₹</span>{invCapital.toLocaleString('en-IN')}
                             </span>
                           </td>
-                          <td className="py-6 px-6 text-right">
-                            <span className="text-sm font-bold text-[#ccff00]">
-                              +₹{invInterest.toLocaleString('en-IN')}
-                            </span>
-                            <span className="block text-[10px] text-gray-500 font-medium">
-                              {project.roi}% • {durationMonths}M
+                          <td className="py-6 px-6">
+                            <span className="text-lg font-black text-white">
+                              {project.roi}%
                             </span>
                           </td>
-                          <td className="py-6 px-6 text-right">
+                          <td className="py-6 px-6">
                             <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
                               <span className="mr-0.5">₹</span>{invTotal.toLocaleString('en-IN')}
                             </span>
-                          </td>
-                          <td className="py-6 px-6 text-center">
-                            <span className="px-3 py-1 rounded-full border border-green-500/50 bg-green-500/10 text-green-400 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap inline-flex items-center gap-1.5">
-                              <HiOutlineCheckCircle className="text-xs" />
-                              Paid Back
+                            <span className="block text-[10px] text-gray-400 font-medium">
+                              (+₹{invInterest.toLocaleString('en-IN')})
                             </span>
                           </td>
                           <td className="py-6 px-6 text-right">
@@ -833,7 +731,7 @@ const ExclusiveProjectDetails = () => {
                       );
                     })
                   ) : (
-                    <tr className="border-b border-white/5 hover:bg-white/[0.04] transition-colors bg-[#ccff00]/[0.01]">
+                    <tr className="border-b border-white/5 hover:bg-white/[0.04] transition-colors bg-white/[0.01]">
                       <td className="py-6 px-6">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 text-[#ccff00] border border-[#ccff00]/20 flex items-center justify-center font-black text-sm shrink-0">
@@ -848,39 +746,26 @@ const ExclusiveProjectDetails = () => {
                         </div>
                       </td>
                       <td className="py-6 px-6">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-white whitespace-nowrap">
-                            {formatDateTime(settlementDateVal).date}
-                          </span>
-                          {formatDateTime(settlementDateVal).time && (
-                            <span className="text-[10px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
-                              {formatDateTime(settlementDateVal).time}
-                            </span>
-                          )}
-                        </div>
+                        <span className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs font-medium border border-white/10 shadow-inner">
+                          {formatDisplayDate(settlementDateVal)}
+                        </span>
                       </td>
-                      <td className="py-6 px-6 text-right">
-                        <span className="text-sm font-bold text-white">
+                      <td className="py-6 px-6">
+                        <span className="text-lg font-black text-white">
                           <span className="mr-0.5">₹</span>{capitalInvested.toLocaleString('en-IN')}
                         </span>
                       </td>
-                      <td className="py-6 px-6 text-right">
-                        <span className="text-sm font-bold text-[#ccff00]">
-                          +₹{estReturns.toLocaleString('en-IN')}
-                        </span>
-                        <span className="block text-[10px] text-gray-500 font-medium">
-                          {project.roi}% • {durationMonths}M
+                      <td className="py-6 px-6">
+                        <span className="text-lg font-black text-white">
+                          {project.roi}%
                         </span>
                       </td>
-                      <td className="py-6 px-6 text-right">
+                      <td className="py-6 px-6">
                         <span className="text-lg font-black text-[#ccff00] drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
                           <span className="mr-0.5">₹</span>{capitalPlusInterest.toLocaleString('en-IN')}
                         </span>
-                      </td>
-                      <td className="py-6 px-6 text-center">
-                        <span className="px-3 py-1 rounded-full border border-green-500/50 bg-green-500/10 text-green-400 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap inline-flex items-center gap-1.5">
-                          <HiOutlineCheckCircle className="text-xs" />
-                          Paid Back
+                        <span className="block text-[10px] text-gray-400 font-medium">
+                          (+₹{estReturns.toLocaleString('en-IN')})
                         </span>
                       </td>
                       <td className="py-6 px-6 text-right">
