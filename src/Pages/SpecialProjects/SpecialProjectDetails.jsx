@@ -245,6 +245,8 @@ const SpecialProjectDetails = () => {
 
       const paidAmount = matchedPayout ? matchedPayout.amount : 0;
       const isPaid = paidAmount >= accrual.amount;
+      const dueAmount = isPaid ? 0 : Math.max(0, accrual.amount - paidAmount);
+      const monthLabel = accrual.date ? new Date(accrual.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
 
       rows.push({
         id: accrual.id,
@@ -254,6 +256,8 @@ const SpecialProjectDetails = () => {
         interest: accrual.amount,
         paid: paidAmount,
         capitalPaid: 0,
+        dueAmount,
+        monthLabel,
         status: isPaid ? 'INTEREST PAID BACK' : (paidAmount > 0 ? 'PARTIALLY PAID' : 'INTEREST ACCRUED'),
         proof: matchedPayout ? matchedPayout.proof : null,
         isInitial: false,
@@ -727,8 +731,9 @@ const SpecialProjectDetails = () => {
                                   onClick={() => {
                                     setPaybackModalMode('INTEREST');
                                     setPaybackType('INTEREST');
-                                    setSelectedPendingMonth(group);
-                                    setPaybackAmount(String(group.dueAmount || group.interest || 5000));
+                                    const targetMonth = pendingInterestMonths.find(m => m.id === group.id) || group;
+                                    setSelectedPendingMonth(targetMonth);
+                                    setPaybackAmount(String(targetMonth.dueAmount || targetMonth.interest || 0));
                                     setIsPaybackModalOpen(true);
                                   }}
                                   className="px-4 py-1.5 rounded-lg font-bold text-[0.65rem] uppercase tracking-widest transition-all bg-[#ccff00] hover:bg-[#b3ff00] text-black shadow-[0_0_10px_rgba(204,255,0,0.2)] hover:scale-105 active:scale-95 cursor-pointer"
@@ -891,10 +896,28 @@ const SpecialProjectDetails = () => {
               {/* Total Due */}
               <div className="flex justify-between items-center bg-[#ccff00]/5 p-5 rounded-2xl border border-[#ccff00]/20 shadow-[inset_0_0_20px_rgba(204,255,0,0.02)] mb-2">
                 <span className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest">
-                  {paybackType === 'INTEREST' ? (selectedPendingMonth ? `Interest Due (${selectedPendingMonth.monthLabel})` : 'Interest Due') : 'Capital Due'}
+                  {paybackType === 'INTEREST'
+                    ? (selectedPendingMonth?.monthLabel
+                        ? `Interest Due (${selectedPendingMonth.monthLabel})`
+                        : (pendingInterestMonths.length > 0 && pendingInterestMonths[0]?.monthLabel
+                            ? `Interest Due (${pendingInterestMonths[0].monthLabel})`
+                            : 'Interest Due'))
+                    : 'Capital Due'}
                 </span>
                 <span className="text-2xl font-black text-[#ccff00] tracking-tight">
-                  <span className="mr-0.5">₹</span>{parseFloat(paybackType === 'INTEREST' ? (selectedPendingMonth ? selectedPendingMonth.dueAmount : (pendingInterestMonths.length > 0 ? pendingInterestMonths.reduce((sum, m) => sum + m.dueAmount, 0) : 0)) : (investment?.remainingCapital || 0)).toLocaleString()}
+                  <span className="mr-0.5">₹</span>
+                  {(() => {
+                    if (paybackType === 'INTEREST') {
+                      const due = selectedPendingMonth?.dueAmount !== undefined
+                        ? selectedPendingMonth.dueAmount
+                        : (pendingInterestMonths.length > 0 ? pendingInterestMonths[0]?.dueAmount : 0);
+                      const parsed = parseFloat(due);
+                      return (isNaN(parsed) ? 0 : parsed).toLocaleString();
+                    } else {
+                      const cap = parseFloat(investment?.remainingCapital || 0);
+                      return (isNaN(cap) ? 0 : cap).toLocaleString();
+                    }
+                  })()}
                 </span>
               </div>
 
@@ -1000,10 +1023,13 @@ const SpecialProjectDetails = () => {
             {/* Modal Footer */}
             <div className="p-6 shrink-0 border-t border-white/5">
               {(() => {
-                const amountToSettle = paybackType === 'INTEREST'
-                  ? (selectedPendingMonth ? selectedPendingMonth.dueAmount : (pendingInterestMonths[0]?.dueAmount || 0))
-                  : parseFloat(paybackAmount || 0);
+                const rawAmount = paybackType === 'INTEREST'
+                  ? (selectedPendingMonth?.dueAmount !== undefined
+                      ? selectedPendingMonth.dueAmount
+                      : (pendingInterestMonths.length > 0 ? pendingInterestMonths[0]?.dueAmount : 0))
+                  : (paybackAmount || 0);
 
+                const amountToSettle = parseFloat(rawAmount) || 0;
                 const isSubmitDisabled = !amountToSettle || amountToSettle <= 0 || !paybackFile || (paybackType === 'INTEREST' && pendingInterestMonths.length === 0);
 
                 return (
