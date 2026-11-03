@@ -204,11 +204,34 @@ const SpecialProjectDetails = () => {
 
     const rows = [];
 
-    // Add Grace Period row for the month following investment (cooling period)
+    // Add Initial Investment row
+    const initialLedger = ledger?.find(l => l.transactionType === 'INITIAL_INVESTMENT');
     const invDateStr = investment?.created_at || investment?.createdAt || project?.ongoingStartDate || project?.created_at;
-    if (invDateStr) {
-      const invDate = new Date(invDateStr);
-      const graceDate = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1, 12, 0, 0);
+    const investDate = initialLedger
+      ? new Date(initialLedger.transactionDate)
+      : (invDateStr ? new Date(invDateStr) : null);
+
+    if (investDate) {
+      const investMonthKey = `${investDate.getFullYear()}-${investDate.getMonth()}`;
+      rows.push({
+        id: 'initial-investment',
+        monthKey: investMonthKey,
+        displayDate: investDate,
+        paidDate: null,
+        interest: 0,
+        paid: 0,
+        capitalPaid: 0,
+        status: 'Principal',
+        proof: project?.paymentProof || null,
+        isInitial: true,
+        isSkipped: false,
+        description: 'Initial Investment'
+      });
+    }
+
+    // Add Grace Period row for the month following investment (cooling period)
+    if (investDate) {
+      const graceDate = new Date(investDate.getFullYear(), investDate.getMonth() + 1, 1, 12, 0, 0);
       const graceMonthKey = `${graceDate.getFullYear()}-${graceDate.getMonth()}`;
       rows.push({
         id: 'grace-period',
@@ -650,6 +673,15 @@ const SpecialProjectDetails = () => {
                                 </span>
                                 <span className="text-[11px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
                                   Grace Period Month
+                                </span>
+                              </div>
+                            ) : group.isInitial ? (
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-white/90 whitespace-nowrap">
+                                  {displayDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                                <span className="text-[11px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
+                                  Investment Initiated
                                 </span>
                               </div>
                             ) : (

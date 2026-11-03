@@ -14,7 +14,8 @@ import {
   HiOutlineTrash,
   HiOutlineInformationCircle,
   HiOutlineClock,
-  HiOutlineCheckCircle
+  HiOutlineCheckCircle,
+  HiOutlineCalendar
 } from 'react-icons/hi';
 import {
 
@@ -42,12 +43,13 @@ const SpecialProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+  const todayDateStr = new Date().toISOString().split('T')[0];
   const [projectData, setProjectData] = useState({
     projectName: '',
     targetAmount: '',
     roi: '',
-
     collectedAmount: '',
+    startDate: todayDateStr,
   });
 
   const [isSubmittingProject, setIsSubmittingProject] = useState(false);
@@ -182,6 +184,7 @@ const SpecialProjects = () => {
       formData.append('roi', roi);
 
       formData.append('collectedAmount', projectData.collectedAmount || 0);
+      formData.append('startDate', projectData.startDate || todayDateStr);
       if (selectedUser) {
         formData.append('assignedUserId', selectedUser.id);
         formData.append('investmentMode', investmentMode);
@@ -216,8 +219,8 @@ const SpecialProjects = () => {
       projectName: '',
       targetAmount: '',
       roi: '',
-
-      collectedAmount: ''
+      collectedAmount: '',
+      startDate: new Date().toISOString().split('T')[0]
     });
 
     setIsEditMode(false);
@@ -293,12 +296,16 @@ const SpecialProjects = () => {
   const handleEditClick = (project) => {
     setIsEditMode(true);
     setEditProjectId(project.id);
+    const initialDateStr = project.ongoingStartDate
+      ? new Date(project.ongoingStartDate).toISOString().split('T')[0]
+      : (project.created_at ? new Date(project.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+
     setProjectData({
       projectName: project.projectName,
       targetAmount: project.targetAmount,
       roi: project.roi,
-
-      collectedAmount: project.collectedAmount || 0
+      collectedAmount: project.collectedAmount || 0,
+      startDate: initialDateStr
     });
 
 
@@ -461,6 +468,11 @@ const SpecialProjects = () => {
                   <span className="text-[0.65rem] text-[#ccff00] font-bold tracking-[0.15em] uppercase">
                     {Math.round((Number(project.collectedAmount || 0) / Number(project.targetAmount || 1)) * 100)}% Funded
                   </span>
+                  {(project.ongoingStartDate || project.created_at) && (
+                    <span className="text-[0.65rem] text-zinc-500 font-medium">
+                      Started: {new Date(project.ongoingStartDate || project.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -535,7 +547,7 @@ const SpecialProjects = () => {
       {/* Add Project Modal Overlay */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto">
-          <div className="my-auto w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-full">
+          <div className="my-auto w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
 
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/5">
@@ -709,7 +721,7 @@ const SpecialProjects = () => {
               </div>
 
               {/* Financials & Timeline Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                 {/* Target Amount */}
                 <div className="flex flex-col gap-2">
@@ -747,8 +759,36 @@ const SpecialProjects = () => {
                     placeholder="e.g. 1.5"
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all placeholder:text-gray-600"
                   />
-
                 </div>
+
+                {/* Project Start Date */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-[0.1em]">Start Date</label>
+                    <span className="text-[10px] text-zinc-500 font-medium">M1: Grace</span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={projectData.startDate}
+                      onChange={handleInputChange}
+                      onClick={(e) => {
+                        try {
+                          if (e.target.showPicker) e.target.showPicker();
+                        } catch (err) {}
+                      }}
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all [color-scheme:dark] cursor-pointer"
+                    />
+                    <HiOutlineCalendar
+                      className="absolute right-3 text-gray-400 hover:text-[#ccff00] text-lg pointer-events-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-[0.6rem] text-zinc-500 md:col-span-3 -mt-2">
+                  Month 1 is Grace Period (0% interest). If backdated, eligible interest returns are calculated automatically up to the current date.
+                </p>
 
               </div>
             </div>
