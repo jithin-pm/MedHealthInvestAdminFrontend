@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { HiOutlineSearch } from 'react-icons/hi';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
-import { FiX, FiShield, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload, FiFileText, FiUnlock, FiUserX, FiUserCheck, FiEdit3, FiActivity, FiMonitor, FiSmartphone, FiTablet, FiGlobe, FiClock, FiMapPin } from 'react-icons/fi';
+import { FiX, FiShield, FiKey, FiUser, FiInfo, FiCopy, FiPaperclip, FiDownload, FiFileText, FiUnlock, FiUserX, FiUserCheck, FiEdit3, FiActivity, FiMonitor, FiSmartphone, FiTablet, FiGlobe, FiClock, FiMapPin } from 'react-icons/fi';
 import Swal from 'sweetalert2';
-import { getAllUsersApi, getUserVerificationStatusApi, getAllTransactionsApi, unblockUserApi, toggleUserStatusApi, adminUpdateUserApi, getUserActivityLogsApi } from '../../services/allApi';
+import { getAllUsersApi, getUserVerificationStatusApi, getAllTransactionsApi, unblockUserApi, toggleUserStatusApi, adminUpdateUserApi, getUserActivityLogsApi, adminResetUserPasswordApi } from '../../services/allApi';
 import { BASE_URL } from '../../services/baseUrl';
 import { generateInvestmentReceipt } from '../../Utils/generateReceipt';
 
@@ -47,6 +47,96 @@ const UserManagement = () => {
     gender: 'Male'
   });
   const [isSavingUser, setIsSavingUser] = useState(false);
+
+  // Reset User Password modal state
+  const [isResetUserPassModalOpen, setIsResetUserPassModalOpen] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState(null);
+  const [newUserPass, setNewUserPass] = useState('');
+  const [confirmUserPass, setConfirmUserPass] = useState('');
+  const [showNewUserPass, setShowNewUserPass] = useState(false);
+  const [showConfirmUserPass, setShowConfirmUserPass] = useState(false);
+  const [isResettingUserPass, setIsResettingUserPass] = useState(false);
+
+  const handleOpenResetUserPassModal = (user) => {
+    setResetTargetUser(user);
+    setNewUserPass('');
+    setConfirmUserPass('');
+    setShowNewUserPass(false);
+    setShowConfirmUserPass(false);
+    setIsResetUserPassModalOpen(true);
+  };
+
+  const handleGenerateRandomPass = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
+    let pass = '';
+    for (let i = 0; i < 10; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewUserPass(pass);
+    setConfirmUserPass(pass);
+    setShowNewUserPass(true);
+    setShowConfirmUserPass(true);
+  };
+
+  const handleResetUserPassSubmit = async (e) => {
+    e.preventDefault();
+    if (!newUserPass || newUserPass.length < 6) {
+      Swal.fire({
+        title: 'Password Too Short',
+        text: 'New password must be at least 6 characters long.',
+        icon: 'warning',
+        background: '#0c0c0c',
+        color: '#ffffff'
+      });
+      return;
+    }
+
+    if (newUserPass !== confirmUserPass) {
+      Swal.fire({
+        title: 'Mismatch',
+        text: 'New password and confirm password do not match.',
+        icon: 'warning',
+        background: '#0c0c0c',
+        color: '#ffffff'
+      });
+      return;
+    }
+
+    setIsResettingUserPass(true);
+    try {
+      const res = await adminResetUserPasswordApi(resetTargetUser.id, {
+        newPassword: newUserPass
+      });
+
+      if (res.status === 200) {
+        Swal.fire({
+          title: 'Password Reset',
+          text: `Password for ${resetTargetUser.fullName} has been updated successfully.`,
+          icon: 'success',
+          confirmButtonColor: '#ccff00',
+          background: '#0c0c0c',
+          color: '#ffffff',
+          customClass: {
+            confirmButton: 'text-black font-bold px-6 py-2.5 rounded-xl'
+          }
+        });
+        setIsResetUserPassModalOpen(false);
+        setResetTargetUser(null);
+        fetchUsers();
+      }
+    } catch (err) {
+      console.error("Reset user password error:", err);
+      Swal.fire({
+        title: 'Failed',
+        text: err.response?.data?.message || 'Failed to reset user password.',
+        icon: 'error',
+        background: '#0c0c0c',
+        color: '#ffffff'
+      });
+    } finally {
+      setIsResettingUserPass(false);
+    }
+  };
 
   // Activity Log modal state
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
@@ -577,6 +667,15 @@ const UserManagement = () => {
                         >
                           <FiEdit3 size={12} />
                           Edit
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenResetUserPassModal(user)}
+                          className="px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500 hover:text-white text-[0.65rem] font-black uppercase tracking-widest transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                          title="Reset this user's password"
+                        >
+                          <FiKey size={12} />
+                          Reset Password
                         </button>
 
                         {isBlocked && (
@@ -1213,6 +1312,133 @@ const UserManagement = () => {
                   ) : (
                     <span>Save Changes</span>
                   )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RESET USER PASSWORD MODAL */}
+      {isResetUserPassModalOpen && resetTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-[#0c0c0c] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-5 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <FiKey className="text-xl" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white tracking-tight">Reset User Password</h3>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Security Credential Override</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsResetUserPassModalOpen(false)}
+                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer"
+              >
+                <FiX className="text-lg" />
+              </button>
+            </div>
+
+            {/* Target User Banner */}
+            <div className="mt-5 p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm uppercase">
+                  {resetTargetUser.fullName?.charAt(0) || 'U'}
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">{resetTargetUser.fullName}</h4>
+                  <p className="text-xs text-gray-400">{resetTargetUser.email}</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-[#ccff00]/10 border border-[#ccff00]/20 text-[#ccff00] text-[10px] font-mono font-bold tracking-wider">
+                {resetTargetUser.customUserId || `MHI2026${String(resetTargetUser.id).padStart(2, '0')}`}
+              </span>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleResetUserPassSubmit} className="mt-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-gray-400 font-medium">Quick Actions:</span>
+                <button
+                  type="button"
+                  onClick={handleGenerateRandomPass}
+                  className="text-[11px] text-[#ccff00] hover:underline font-bold tracking-wide cursor-pointer flex items-center gap-1"
+                >
+                  Generate Strong Password
+                </button>
+              </div>
+
+              {/* New Password */}
+              <div className="space-y-1.5">
+                <label className="block text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewUserPass ? "text" : "password"}
+                    value={newUserPass}
+                    onChange={(e) => setNewUserPass(e.target.value)}
+                    placeholder="Enter at least 6 characters"
+                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500 transition-colors pr-10 font-mono"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewUserPass(!showNewUserPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showNewUserPass ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-1.5">
+                <label className="block text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmUserPass ? "text" : "password"}
+                    value={confirmUserPass}
+                    onChange={(e) => setConfirmUserPass(e.target.value)}
+                    placeholder="Repeat the new password"
+                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500 transition-colors pr-10 font-mono"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmUserPass(!showConfirmUserPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showConfirmUserPass ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-gray-500 leading-relaxed pt-1">
+                * Resetting the password will immediately apply the change, reset any active account lockouts, and send a security notice to the user.
+              </p>
+
+              {/* Actions */}
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsResetUserPassModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResettingUserPass}
+                  className="px-6 py-2.5 rounded-xl bg-purple-500 text-white font-black text-xs uppercase tracking-widest hover:bg-purple-600 transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                >
+                  {isResettingUserPass ? 'Resetting...' : 'Save & Reset Password'}
                 </button>
               </div>
             </form>

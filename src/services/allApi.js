@@ -16,6 +16,26 @@ export const resendAdminOtpApi = async (data) => {
     return await commonApi("POST", "/api/auth/resend-admin-otp", data, "");
 };
 
+// Admin Forgot Password
+export const adminForgotPasswordApi = async (data) => {
+    return await commonApi("POST", "/api/auth/admin-forgot-password", data, "");
+};
+
+// Admin Reset Password (with OTP)
+export const adminResetPasswordApi = async (data) => {
+    return await commonApi("POST", "/api/auth/admin-reset-password", data, "");
+};
+
+// Admin Change Password (Inside Dashboard)
+export const adminChangePasswordApi = async (data) => {
+    return await commonApi("POST", "/api/auth/admin-change-password", data, "");
+};
+
+// Admin Reset User Password (User Management)
+export const adminResetUserPasswordApi = async (userId, data) => {
+    return await commonApi("POST", `/api/auth/admin-reset-user-password/${userId}`, data, "");
+};
+
 // If there are other admin specific APIs, they can be added here
 // For example:
 export const getAllUsersApi = async () => {
