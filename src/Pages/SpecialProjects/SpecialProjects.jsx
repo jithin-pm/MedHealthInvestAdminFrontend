@@ -14,8 +14,7 @@ import {
   HiOutlineTrash,
   HiOutlineInformationCircle,
   HiOutlineClock,
-  HiOutlineCheckCircle,
-  HiOutlineCalendar
+  HiOutlineCheckCircle
 } from 'react-icons/hi';
 import {
 
@@ -43,7 +42,13 @@ const SpecialProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const todayDateStr = new Date().toISOString().split('T')[0];
+  const getLocalDateStr = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const todayDateStr = getLocalDateStr();
   const [projectData, setProjectData] = useState({
     projectName: '',
     targetAmount: '',
@@ -143,6 +148,10 @@ const SpecialProjects = () => {
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
     if (type === 'number' && parseFloat(value) < 0) return;
+    if (name === 'startDate' && value && value > todayDateStr) {
+      setProjectData(prev => ({ ...prev, [name]: todayDateStr }));
+      return;
+    }
     setProjectData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -771,6 +780,7 @@ const SpecialProjects = () => {
                     <input
                       type="date"
                       name="startDate"
+                      max={todayDateStr}
                       value={projectData.startDate}
                       onChange={handleInputChange}
                       onClick={(e) => {
@@ -778,10 +788,7 @@ const SpecialProjects = () => {
                           if (e.target.showPicker) e.target.showPicker();
                         } catch (err) {}
                       }}
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all [color-scheme:dark] cursor-pointer"
-                    />
-                    <HiOutlineCalendar
-                      className="absolute right-3 text-gray-400 hover:text-[#ccff00] text-lg pointer-events-none transition-colors"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#ccff00] focus:ring-1 focus:ring-[#ccff00]/50 transition-all [color-scheme:dark] cursor-pointer"
                     />
                   </div>
                 </div>
