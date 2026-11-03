@@ -12,6 +12,7 @@ import {
   HiOutlinePlay,
   HiOutlineRefresh,
   HiOutlineTrash,
+  HiOutlinePencilAlt,
   HiOutlineInformationCircle,
   HiOutlineClock,
   HiOutlineCheckCircle
@@ -492,6 +493,13 @@ const SpecialProjects = () => {
                   >
                     <HiOutlineEye className="text-gray-400 group-hover/btn:text-[#ccff00] transition-colors text-lg" />
                     <span className="text-[0.7rem] font-bold text-white uppercase tracking-[0.2em]">View</span>
+                  </button>
+                  <button
+                    onClick={() => handleEditClick(project)}
+                    className="px-4 py-3.5 rounded-xl bg-white/[0.03] hover:bg-[#ccff00]/10 border border-white/[0.05] hover:border-[#ccff00]/30 transition-all duration-300 flex items-center justify-center group/edit"
+                    title="Edit Project"
+                  >
+                    <HiOutlinePencilAlt className="text-gray-400 group-hover/edit:text-[#ccff00] transition-colors text-lg" />
                   </button>
                   <button
                     onClick={() => handleDeleteProject(project.id)}

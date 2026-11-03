@@ -206,7 +206,7 @@ const SpecialProjectDetails = () => {
 
     // Add Initial Investment row
     const initialLedger = ledger?.find(l => l.transactionType === 'INITIAL_INVESTMENT');
-    const invDateStr = investment?.created_at || investment?.createdAt || project?.ongoingStartDate || project?.created_at;
+    const invDateStr = project?.ongoingStartDate || initialLedger?.transactionDate || investment?.created_at || investment?.createdAt || project?.created_at;
     const investDate = initialLedger
       ? new Date(initialLedger.transactionDate)
       : (invDateStr ? new Date(invDateStr) : null);
@@ -536,7 +536,12 @@ const SpecialProjectDetails = () => {
                   </td>
                   <td className="py-6 px-6">
                     <span className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs font-medium border border-white/10 shadow-inner">
-                      {ledger.find(l => l.transactionType === 'INITIAL_INVESTMENT') ? new Date(ledger.find(l => l.transactionType === 'INITIAL_INVESTMENT').transactionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : (investment ? new Date(investment.created_at || investment.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A')}
+                      {ledger.find(l => l.transactionType === 'INITIAL_INVESTMENT')
+                        ? new Date(ledger.find(l => l.transactionType === 'INITIAL_INVESTMENT').transactionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                        : (project?.ongoingStartDate
+                          ? new Date(project.ongoingStartDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                          : (investment ? new Date(investment.created_at || investment.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A')
+                        )}
                     </span>
                   </td>
                   <td className="py-6 px-6">
