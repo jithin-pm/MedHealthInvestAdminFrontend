@@ -204,63 +204,34 @@ const SpecialProjectDetails = () => {
 
     const rows = [];
 
-    // Add Initial Investment row
-    const initialLedger = ledger?.find(l => l.transactionType === 'INITIAL_INVESTMENT');
+    // Add Grace Period row only once the grace period first day arrives (do not display in advance)
     const invDateStr = project?.ongoingStartDate || initialLedger?.transactionDate || investment?.created_at || investment?.createdAt || project?.created_at;
-    const investDate = initialLedger
-      ? new Date(initialLedger.transactionDate)
-      : (invDateStr ? new Date(invDateStr) : null);
-
-    if (investDate) {
-      const investMonthKey = `${investDate.getFullYear()}-${investDate.getMonth()}`;
-      rows.push({
-        id: 'initial-investment',
-        monthKey: investMonthKey,
-        displayDate: investDate,
-        paidDate: null,
-        interest: 0,
-        paid: 0,
-        capitalPaid: 0,
-        status: 'Principal',
-        proof: project?.paymentProof || null,
-        isInitial: true,
-        isSkipped: false,
-        description: 'Initial Investment'
-      });
-    }
-
-    // Add Grace Period row for the month following investment (cooling period)
-    if (investDate) {
-      const graceDate = new Date(investDate.getFullYear(), investDate.getMonth() + 1, 1, 12, 0, 0);
-      const graceMonthKey = `${graceDate.getFullYear()}-${graceDate.getMonth()}`;
-      rows.push({
-        id: 'grace-period',
-        monthKey: graceMonthKey,
-        displayDate: graceDate,
-        paidDate: null,
-        interest: 0,
-        paid: 0,
-        capitalPaid: 0,
-        status: 'Grace Period',
-        proof: null,
-        isInitial: false,
-        isSkipped: true,
-        description: 'Grace Period'
-      });
-    }
-
-    // Deduplicate accruals so that only one interest row is processed per month (defense-in-depth)
-    const uniqueAccruals = [];
-    const seenAccrualMonths = new Set();
-    for (const acc of accruals) {
-      if (!seenAccrualMonths.has(acc.monthKey)) {
-        seenAccrualMonths.add(acc.monthKey);
-        uniqueAccruals.push(acc);
+    if (invDateStr) {
+      const invDate = new Date(invDateStr);
+      const graceStartDate = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1, 0, 0, 0, 0);
+      const now = new Date();
+      if (now >= graceStartDate) {
+        const graceDate = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1, 12, 0, 0);
+        const graceMonthKey = `${graceDate.getFullYear()}-${graceDate.getMonth()}`;
+        rows.push({
+          id: 'grace-period',
+          monthKey: graceMonthKey,
+          displayDate: graceDate,
+          paidDate: null,
+          interest: 0,
+          paid: 0,
+          capitalPaid: 0,
+          status: 'Grace Period',
+          proof: null,
+          isInitial: false,
+          isSkipped: true,
+          description: 'Grace Period'
+        });
       }
     }
 
     // Process accruals and pair with matching interest payouts (same month or FIFO)
-    for (const accrual of uniqueAccruals) {
+    for (const accrual of accruals) {
       const matchedPayout = interestPayouts.find(p => p.monthKey === accrual.monthKey && !p.used) || interestPayouts.find(p => !p.used);
       if (matchedPayout) {
         matchedPayout.used = true;
@@ -268,8 +239,6 @@ const SpecialProjectDetails = () => {
 
       const paidAmount = matchedPayout ? matchedPayout.amount : 0;
       const isPaid = paidAmount >= accrual.amount;
-      const dueAmount = isPaid ? 0 : Math.max(0, accrual.amount - paidAmount);
-      const monthLabel = accrual.date ? new Date(accrual.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
 
       rows.push({
         id: accrual.id,
@@ -279,8 +248,6 @@ const SpecialProjectDetails = () => {
         interest: accrual.amount,
         paid: paidAmount,
         capitalPaid: 0,
-        dueAmount,
-        monthLabel,
         status: isPaid ? 'INTEREST PAID BACK' : (paidAmount > 0 ? 'PARTIALLY PAID' : 'INTEREST ACCRUED'),
         proof: matchedPayout ? matchedPayout.proof : null,
         isInitial: false,
@@ -397,7 +364,7 @@ const SpecialProjectDetails = () => {
             <div>
               <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                 <HiOutlineTrendingUp className="text-[#ccff00] text-lg" />
-                Projected ROI
+                Projected Monthly ROI
               </p>
               <div className="flex items-end gap-2">
                 <p className="text-4xl font-black text-[#ccff00]">{project.roi}%</p>
@@ -428,7 +395,7 @@ const SpecialProjectDetails = () => {
                   {/* Interest Section */}
                   <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex flex-col justify-between hover:bg-white/[0.05] transition-colors">
                     <span className="text-gray-500 font-bold uppercase tracking-widest text-[0.65rem] mb-2">Total Interest Given</span>
-                    <span className="text-white font-black text-lg">+<span className="mr-0.5">₹</span>{filledLedgerData.filter(g => !g.isInitial && !g.isSkipped && g.interest > 0).reduce((sum, g) => sum + parseFloat(g.interest), 0).toLocaleString()}</span>
+                    <span className="text-white font-black text-lg">+<span className="mr-0.5">₹</span>{ledger.filter(l => l.transactionType === 'INTEREST_ACCRUED').reduce((sum, l) => sum + parseFloat(l.amount), 0).toLocaleString()}</span>
                   </div>
 
                   <div className="bg-[#ccff00]/[0.05] border border-[#ccff00]/20 rounded-2xl p-4 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(204,255,0,0.02)]">
@@ -508,7 +475,7 @@ const SpecialProjectDetails = () => {
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Investment Date</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Amount Invested</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (Monthly ROI)</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                 </tr>
               </thead>
@@ -680,15 +647,6 @@ const SpecialProjectDetails = () => {
                                   Grace Period Month
                                 </span>
                               </div>
-                            ) : group.isInitial ? (
-                              <div className="flex flex-col">
-                                <span className="text-sm font-bold text-white/90 whitespace-nowrap">
-                                  {displayDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </span>
-                                <span className="text-[11px] font-mono text-gray-400 mt-0.5 whitespace-nowrap">
-                                  Investment Initiated
-                                </span>
-                              </div>
                             ) : (
                               <span className="text-sm font-bold text-gray-500">—</span>
                             )}
@@ -768,9 +726,8 @@ const SpecialProjectDetails = () => {
                                   onClick={() => {
                                     setPaybackModalMode('INTEREST');
                                     setPaybackType('INTEREST');
-                                    const targetMonth = pendingInterestMonths.find(m => m.id === group.id) || group;
-                                    setSelectedPendingMonth(targetMonth);
-                                    setPaybackAmount(String(targetMonth.dueAmount || targetMonth.interest || 0));
+                                    setSelectedPendingMonth(group);
+                                    setPaybackAmount(String(group.dueAmount || group.interest || 5000));
                                     setIsPaybackModalOpen(true);
                                   }}
                                   className="px-4 py-1.5 rounded-lg font-bold text-[0.65rem] uppercase tracking-widest transition-all bg-[#ccff00] hover:bg-[#b3ff00] text-black shadow-[0_0_10px_rgba(204,255,0,0.2)] hover:scale-105 active:scale-95 cursor-pointer"
@@ -885,22 +842,17 @@ const SpecialProjectDetails = () => {
               {/* In Interest Payback Tab: Pending Months Radio Buttons or "No interest pending" */}
               {paybackType === 'INTEREST' && (
                 <div>
-                  <h3 className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest mb-3">
-                    {paybackModalMode === 'INTEREST' && selectedPendingMonth ? 'Selected Interest Month' : 'Pending Interest Months'}
-                  </h3>
+                  <h3 className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest mb-3">Pending Interest Months</h3>
                   {pendingInterestMonths.length > 0 ? (
                     <div className="space-y-2.5">
-                      {((paybackModalMode === 'INTEREST' && selectedPendingMonth)
-                        ? [selectedPendingMonth]
-                        : pendingInterestMonths
-                      ).map((m) => {
-                        const isSelected = selectedPendingMonth?.id === m.id || (!selectedPendingMonth && pendingInterestMonths[0]?.id === m.id);
+                      {pendingInterestMonths.map((m) => {
+                        const isSelected = selectedPendingMonth?.id === m.id;
                         return (
                           <label
                             key={m.id}
                             onClick={() => {
                               setSelectedPendingMonth(m);
-                              setPaybackAmount(String(m.dueAmount || 0));
+                              setPaybackAmount(String(m.dueAmount));
                             }}
                             className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${isSelected
                               ? 'bg-[#ccff00]/10 border-[#ccff00] text-white shadow-[0_0_15px_rgba(204,255,0,0.1)]'
@@ -914,13 +866,13 @@ const SpecialProjectDetails = () => {
                                 checked={isSelected}
                                 onChange={() => {
                                   setSelectedPendingMonth(m);
-                                  setPaybackAmount(String(m.dueAmount || 0));
+                                  setPaybackAmount(String(m.dueAmount));
                                 }}
                                 className="accent-[#ccff00] w-4 h-4 cursor-pointer"
                               />
                               <span className="text-xs font-bold uppercase tracking-wider">{m.monthLabel}</span>
                             </div>
-                            <span className="text-xs font-black text-[#ccff00]"><span className="mr-0.5">₹</span>{(m.dueAmount || 0).toLocaleString()}</span>
+                            <span className="text-xs font-black text-[#ccff00]"><span className="mr-0.5">₹</span>{m.dueAmount.toLocaleString()}</span>
                           </label>
                         );
                       })}
@@ -938,28 +890,10 @@ const SpecialProjectDetails = () => {
               {/* Total Due */}
               <div className="flex justify-between items-center bg-[#ccff00]/5 p-5 rounded-2xl border border-[#ccff00]/20 shadow-[inset_0_0_20px_rgba(204,255,0,0.02)] mb-2">
                 <span className="text-gray-400 text-[0.65rem] font-bold uppercase tracking-widest">
-                  {paybackType === 'INTEREST'
-                    ? (selectedPendingMonth?.monthLabel
-                      ? `Interest Due (${selectedPendingMonth.monthLabel})`
-                      : (pendingInterestMonths.length > 0 && pendingInterestMonths[0]?.monthLabel
-                        ? `Interest Due (${pendingInterestMonths[0].monthLabel})`
-                        : 'Interest Due'))
-                    : 'Capital Due'}
+                  {paybackType === 'INTEREST' ? (selectedPendingMonth ? `Interest Due (${selectedPendingMonth.monthLabel})` : 'Interest Due') : 'Capital Due'}
                 </span>
                 <span className="text-2xl font-black text-[#ccff00] tracking-tight">
-                  <span className="mr-0.5">₹</span>
-                  {(() => {
-                    if (paybackType === 'INTEREST') {
-                      const due = selectedPendingMonth?.dueAmount !== undefined
-                        ? selectedPendingMonth.dueAmount
-                        : (pendingInterestMonths.length > 0 ? pendingInterestMonths[0]?.dueAmount : 0);
-                      const parsed = parseFloat(due);
-                      return (isNaN(parsed) ? 0 : parsed).toLocaleString();
-                    } else {
-                      const cap = parseFloat(investment?.remainingCapital || 0);
-                      return (isNaN(cap) ? 0 : cap).toLocaleString();
-                    }
-                  })()}
+                  <span className="mr-0.5">₹</span>{parseFloat(paybackType === 'INTEREST' ? (selectedPendingMonth ? selectedPendingMonth.dueAmount : (pendingInterestMonths.length > 0 ? pendingInterestMonths.reduce((sum, m) => sum + m.dueAmount, 0) : 0)) : (investment?.remainingCapital || 0)).toLocaleString()}
                 </span>
               </div>
 
@@ -1065,13 +999,10 @@ const SpecialProjectDetails = () => {
             {/* Modal Footer */}
             <div className="p-6 shrink-0 border-t border-white/5">
               {(() => {
-                const rawAmount = paybackType === 'INTEREST'
-                  ? (selectedPendingMonth?.dueAmount !== undefined
-                    ? selectedPendingMonth.dueAmount
-                    : (pendingInterestMonths.length > 0 ? pendingInterestMonths[0]?.dueAmount : 0))
-                  : (paybackAmount || 0);
+                const amountToSettle = paybackType === 'INTEREST'
+                  ? (selectedPendingMonth ? selectedPendingMonth.dueAmount : (pendingInterestMonths[0]?.dueAmount || 0))
+                  : parseFloat(paybackAmount || 0);
 
-                const amountToSettle = parseFloat(rawAmount) || 0;
                 const isSubmitDisabled = !amountToSettle || amountToSettle <= 0 || !paybackFile || (paybackType === 'INTEREST' && pendingInterestMonths.length === 0);
 
                 return (

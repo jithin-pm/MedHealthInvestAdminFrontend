@@ -377,7 +377,7 @@ const ProjectDetails = () => {
         {/* Stats Sidebar */}
         <div className="space-y-3 mt-8 lg:mt-0">
           {[
-            { label: 'Target ROI', value: `${project.roi}%`, icon: HiOutlineTrendingUp, color: 'text-[#ccff00]' },
+            { label: 'Target Monthly ROI', value: `${project.roi}%`, icon: HiOutlineTrendingUp, color: 'text-[#ccff00]' },
             { label: 'Duration', value: `${project.duration} Months`, icon: HiOutlineClock, color: 'text-blue-400' },
             { label: 'Target Amount', value: `₹\u2009${Number(project.targetAmount).toLocaleString('en-IN')}`, icon: HiOutlineCurrencyRupee, color: 'text-[#ccff00]', isTargetAmount: true },
           ].map((stat, i) => (
@@ -618,7 +618,7 @@ const ProjectDetails = () => {
                   </p>
                 </div>
                 <span className="text-[10px] text-gray-400 font-medium mt-3">
-                  {project.roi}% ROI × {durationMonths} Months
+                  {project.roi}% Monthly ROI × {durationMonths} Months
                 </span>
               </div>
 

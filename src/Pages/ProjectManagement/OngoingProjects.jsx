@@ -340,7 +340,7 @@ const OngoingProjects = () => {
                 
                 <div className="grid grid-cols-2 gap-y-6 mb-6 pt-2">
                   <div className="flex flex-col">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Est. ROI</span>
+                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Est. Monthly ROI</span>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
                       {project.roi && !isNaN(parseFloat(project.roi)) && parseFloat(project.roi) > 0 && (

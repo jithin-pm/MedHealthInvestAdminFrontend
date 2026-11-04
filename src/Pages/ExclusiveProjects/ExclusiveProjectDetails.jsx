@@ -450,10 +450,11 @@ const ExclusiveProjectDetails = () => {
               <div>
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                   <HiOutlineTrendingUp className="text-[#ccff00] text-lg" />
-                  Projected ROI
+                  Projected Monthly ROI
                 </p>
                 <div className="flex items-end gap-2">
                   <p className="text-4xl font-black text-[#ccff00]">{project.roi}%</p>
+                  <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-1.5">Monthly</p>
                 </div>
               </div>
 
@@ -621,7 +622,7 @@ const ExclusiveProjectDetails = () => {
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Investment Date</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Capital Invested</th>
-                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (ROI)</th>
+                  <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (Monthly ROI)</th>
                   <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                 </tr>
               </thead>
@@ -763,7 +764,7 @@ const ExclusiveProjectDetails = () => {
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest rounded-tl-xl">Investor</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Paid Back Date</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Capital Invested</th>
-                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (ROI)</th>
+                    <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest">Percentage (Monthly ROI)</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-[#ccff00] uppercase tracking-widest">Amount Paid Back</th>
                     <th className="py-4 px-6 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest text-right rounded-tr-xl">Attachment</th>
                   </tr>

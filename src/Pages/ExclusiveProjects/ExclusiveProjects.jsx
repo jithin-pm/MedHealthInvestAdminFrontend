@@ -587,7 +587,7 @@ const ExclusiveProjects = () => {
                 {/* Financials Grid */}
                 <div className="grid grid-cols-2 gap-y-6 mb-6 pt-2">
                   <div className="flex flex-col">
-                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Est. ROI</span>
+                    <span className="text-[0.6rem] text-gray-500 font-bold uppercase tracking-[0.2em] mb-1">Est. Monthly ROI</span>
                     <span className="text-xl font-bold text-[#ccff00]">{project.roi}%</span>
                   </div>
                   <div className="flex flex-col items-end">

@@ -295,7 +295,7 @@ const SpecialSettlementManagement = () => {
             { label: 'Project Name', value: project?.projectName, icon: HiOutlineLibrary },
             { label: 'Classification', value: project?.projectCategory, icon: HiOutlineTag },
             { label: 'Project Type', value: project?.projectType, icon: HiOutlineStar },
-            { label: 'Financial ROI', value: project?.status === 'EXPIRED' ? 'Refund Only' : `${project?.roi}%`, icon: HiOutlineLibrary },
+            { label: 'Monthly ROI', value: project?.status === 'EXPIRED' ? 'Refund Only' : `${project?.roi}%`, icon: HiOutlineLibrary },
             { label: 'Term Duration', value: `${project?.duration} Months`, icon: HiOutlineClock },
             { label: 'Registry Count', value: `${investors.length} Records`, icon: HiOutlineUser }
           ].map((item, i) => (

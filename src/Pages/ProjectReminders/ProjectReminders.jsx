@@ -552,7 +552,7 @@ const ProjectReminders = () => {
                   <div className="flex items-center gap-8 sm:gap-12 shrink-0">
                     {!isRefundPending && (
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">ROI & Duration</span>
+                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Monthly ROI & Duration</span>
                         <span className="text-sm sm:text-base font-bold text-white">
                           <span className="text-[#ccff00]">{project.roi}%</span> • {project.duration}M
                         </span>

@@ -179,7 +179,7 @@ const CompletedProjects = () => {
                 
                 <div className="grid grid-cols-2 gap-4 mb-8 pt-4 border-t border-white/5">
                    <div className="flex flex-col">
-                     <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Maturity ROI</span>
+                     <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Monthly ROI</span>
                      <span className="text-2xl font-black text-white tracking-tighter">{project.roi}%</span>
                    </div>
                    <div className="flex flex-col items-end">

@@ -347,7 +347,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full py-3.5 border-b border-gray-800 text-white text-[0.95rem] outline-none transition-all focus:border-[#ccff00] bg-transparent placeholder:text-gray-700"
-                    placeholder="admin@medhealthinvest.com"
+                    placeholder="Enter your email"
                     autoComplete="username"
                     required
                   />
@@ -365,7 +365,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full py-3.5 pr-10 border-b border-gray-800 text-white text-[0.95rem] outline-none transition-all focus:border-[#ccff00] bg-transparent placeholder:text-gray-700"
-                      placeholder="••••••••"
+                      placeholder="Enter your password"
                       autoComplete="current-password"
                       required
                     />
@@ -556,7 +556,7 @@ const Login = () => {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     className="w-full py-3.5 border-b border-gray-800 text-white text-[0.95rem] outline-none transition-all focus:border-[#ccff00] bg-transparent placeholder:text-gray-700"
-                    placeholder="admin@medhealthinvest.com"
+                    placeholder="Enter your email"
                     autoFocus
                     required
                   />
